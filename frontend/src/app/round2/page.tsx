@@ -15,7 +15,174 @@ interface RoundStatus {
     completed: boolean;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Code Compiler Component (embedded in each phase)
+// ═══════════════════════════════════════════════════════════════
+function CodeCompiler({ phaseLabel, onUseOutput }: { phaseLabel: string; onUseOutput?: (output: string) => void }) {
+    const [language, setLanguage] = useState<'javascript' | 'python' | 'java'>('java');
+    const [code, setCode] = useState('');
+    const [output, setOutput] = useState('');
+    const [error, setError] = useState('');
+    const [running, setRunning] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
+
+    const handleRun = async () => {
+        if (!code.trim()) return;
+        setRunning(true);
+        setOutput('');
+        setError('');
+
+        try {
+            const result = await api.runCode(language, code) as {
+                success: boolean;
+                output: string;
+                error: string | null;
+            };
+            if (result.success) {
+                setOutput(result.output || '(no output)');
+                if (result.error) setError(result.error);
+            } else {
+                setError(result.error || 'Execution failed.');
+            }
+        } catch (err) {
+            setError('Compiler service unavailable.');
+        } finally {
+            setRunning(false);
+        }
+    };
+
+    const placeholders: Record<string, string> = {
+        java: `public class Main {\n    public static void main(String[] args) {\n        // Write your ${phaseLabel} code here\n        System.out.println("Hello World");\n    }\n}`,
+        python: `# Write your ${phaseLabel} code here\nprint("Hello World")`,
+        javascript: `// Write your ${phaseLabel} code here\nconsole.log("Hello World");`,
+    };
+
+    return (
+        <div className="mt-4 border border-cyber-border rounded-lg overflow-hidden">
+            {/* Toggle bar */}
+            <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-cyber-darker hover:bg-cyber-dark transition-colors"
+            >
+                <div className="flex items-center gap-2">
+                    <span className="text-cyber-green text-sm">⌨</span>
+                    <span className="text-cyber-cyan font-mono text-xs font-bold uppercase tracking-wider">
+                        Code Runner — {phaseLabel}
+                    </span>
+                </div>
+                <span className="text-cyber-muted text-xs font-mono">
+                    {collapsed ? '▶ EXPAND' : '▼ COLLAPSE'}
+                </span>
+            </button>
+
+            {!collapsed && (
+                <div className="p-4 bg-cyber-darker space-y-3">
+                    {/* Language selector */}
+                    <div className="flex items-center gap-2">
+                        {(['java', 'python', 'javascript'] as const).map((lang) => (
+                            <button
+                                key={lang}
+                                onClick={() => setLanguage(lang)}
+                                className={`
+                                    px-3 py-1.5 rounded font-mono text-xs font-bold uppercase transition-all
+                                    ${language === lang
+                                        ? 'bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan'
+                                        : 'bg-cyber-dark text-cyber-muted border border-cyber-border hover:border-cyber-cyan/50'
+                                    }
+                                `}
+                            >
+                                {lang}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Code editor */}
+                    <textarea
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        placeholder={placeholders[language]}
+                        rows={10}
+                        className="w-full bg-[#0a0e14] text-[#e0e0e0] font-mono text-sm p-4 rounded border border-cyber-border focus:border-cyber-cyan focus:outline-none resize-y placeholder:text-[#555] caret-white"
+                        spellCheck={false}
+                    />
+
+                    {/* Run button */}
+                    <button
+                        onClick={handleRun}
+                        disabled={!code.trim() || running}
+                        className={`
+                            w-full py-2.5 rounded font-mono text-sm font-bold uppercase tracking-wider transition-all
+                            ${running
+                                ? 'bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/50 animate-pulse'
+                                : 'bg-cyber-green/20 text-cyber-green border border-cyber-green hover:bg-cyber-green/30 hover:shadow-[0_0_15px_rgba(0,255,100,0.2)]'
+                            }
+                            disabled:opacity-40 disabled:cursor-not-allowed
+                        `}
+                    >
+                        {running ? '⟳ EXECUTING...' : '▶ RUN CODE'}
+                    </button>
+
+                    {/* Output panel */}
+                    {(output || error) && (
+                        <div className="bg-[#0a0e14] rounded border border-cyber-border p-4 max-h-64 overflow-y-auto">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="text-[10px] text-cyber-muted font-mono uppercase tracking-widest">
+                                    CONSOLE OUTPUT:
+                                </div>
+                                {output && onUseOutput && (
+                                    <button
+                                        onClick={() => onUseOutput(output.trim())}
+                                        className="px-3 py-1 rounded font-mono text-[10px] font-bold uppercase bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan hover:bg-cyber-cyan/30 transition-all"
+                                    >
+                                        ⬇ USE AS KEY
+                                    </button>
+                                )}
+                            </div>
+                            {output && (
+                                <pre className="text-cyber-green font-mono text-xs whitespace-pre-wrap break-words">
+                                    {output}
+                                </pre>
+                            )}
+                            {error && (
+                                <pre className="text-cyber-red font-mono text-xs whitespace-pre-wrap break-words mt-1">
+                                    {error}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+
+// ═══════════════════════════════════════════════════════════════
 // Phase 1: The 120-Second Shadow
+// ═══════════════════════════════════════════════════════════════
+// Hardcoded log arrays for Phase 1
+const LOG_A = [
+    "08:00:15", "08:12:45", "08:22:10", "08:35:00", "08:45:30",
+    "09:10:00", "09:25:15", "09:40:00", "10:05:20", "10:15:00",
+    "11:00:00", "11:15:45", "11:30:10", "11:45:00", "12:00:30",
+    "13:15:00", "13:30:45", "13:45:10", "14:10:00", "14:25:30"
+];
+
+const LOG_B = [
+    "08:05:00", "08:15:30", "08:30:00", "08:50:00", "09:05:45",
+    "09:30:10", "09:55:00", "10:20:30", "10:45:00", "11:10:15",
+    "11:55:00", "12:15:45", "12:45:10", "13:00:00", "14:00:30"
+];
+
+const LOG_C = [
+    "08:02:30 AM", "08:20:00 AM", "08:32:15 AM", "08:40:45 AM", "09:00:00 AM",
+    "10:00:00 AM", "10:30:00 AM", "11:05:00 AM", "12:30:00 PM", "01:05:00 PM",
+    "02:00:00 PM", "02:05:00 PM", "02:07:00 PM", "02:15:45 PM", "02:30:00 PM"
+];
+
+const CONVERSION_CHALLENGE = "02:07:00 PM";
+const SORTED_INDEX_CHALLENGE = 25;
+
 function TimeGapPuzzle({
     onComplete,
     disabled
@@ -23,41 +190,32 @@ function TimeGapPuzzle({
     onComplete: () => void;
     disabled: boolean;
 }) {
-    const [indicesSum, setIndicesSum] = useState('');
-    const [conversionComplete, setConversionComplete] = useState(false);
-    const [sortingComplete, setSortingComplete] = useState(false);
-    const [gapIdentified, setGapIdentified] = useState(false);
+    const [breachKey, setBreachKey] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Sample timestamps (in reality, there would be 150+ timestamps)
-    const timestamps = [
-        '09:41:00', '09:42:15', '09:43:00', '09:44:02', '09:44:50',
-        '09:45:00', '09:46:12', '09:47:00', '09:48:30', '09:50:30'
-    ];
-
     const handleSubmit = async () => {
-        if (!indicesSum) return;
+        if (!breachKey) return;
         setSubmitting(true);
         setMessage(null);
 
         try {
             const response = await api.submitRound2Phase1({
-                indicesSum: parseInt(indicesSum),
-                conversionComplete,
-                sortingComplete,
-                gapIdentified
+                conversionAnswer: '',
+                sortedTimestamp: '',
+                breachKey: parseInt(breachKey)
             }) as {
                 success: boolean;
                 message: string;
                 pointsEarned?: number;
                 pointsDeducted?: number;
+                feedback?: string[];
             };
             if (response.success) {
-                setMessage({ type: 'success', text: `${response.message}` });
+                setMessage({ type: 'success', text: response.message });
                 setTimeout(onComplete, 1500);
             } else {
-                setMessage({ type: 'error', text: `${response.message}` });
+                setMessage({ type: 'error', text: response.message });
             }
         } catch (err) {
             setMessage({ type: 'error', text: 'Analysis failed.' });
@@ -70,64 +228,76 @@ function TimeGapPuzzle({
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
                 <div className="text-cyber-green text-lg font-mono mb-2">✓ KEY 1 ACQUIRED</div>
-                <p className="text-cyber-muted text-sm">120-second gap identified successfully</p>
+                <p className="text-cyber-muted text-sm">120-second shadow identified successfully</p>
             </div>
         );
     }
 
+
+    const totalTimestamps = LOG_A.length + LOG_B.length + LOG_C.length;
+
     return (
         <div className="space-y-6">
+            {/* Scenario briefing */}
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3">
                     <span className="text-cyber-cyan">🔍</span>
-                    <p className="text-cyber-muted text-sm font-mono">
-                        Find two consecutive timestamps exactly 120 seconds apart. Convert AM/PM to 24-hour, sort chronologically, and identify the gap.
-                    </p>
+                    <h3 className="text-cyber-cyan font-mono text-sm font-bold uppercase">Mission Brief</h3>
+                </div>
+                <p className="text-cyber-muted text-xs font-mono leading-relaxed">
+                    The mole accessed the system across three servers to hide their tracks.
+                    You have <span className="text-cyber-text font-bold">{totalTimestamps} timestamps</span> across 3 server logs.
+                    Server C uses AM/PM format. Convert, merge, sort, and find the two consecutive timestamps
+                    that are exactly <span className="text-cyber-cyan font-bold">120 seconds</span> apart.
+                </p>
+            </div>
+
+            {/* Log arrays displayed in code format */}
+            <div className="space-y-4">
+                <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
+                    <div className="text-cyber-cyan text-[10px] font-mono mb-2 uppercase tracking-widest">Log A: 24-Hour Format ({LOG_A.length} Entries)</div>
+                    <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                        {`String[] logA = {\n    ${LOG_A.map(t => `"${t}"`).join(', ')}\n};`}
+                    </pre>
                 </div>
 
-                <div className="bg-cyber-darker rounded border border-cyber-border p-4 font-mono text-sm mb-6">
-                    <div className="grid grid-cols-2 gap-2 text-cyber-muted border-b border-cyber-border pb-2 mb-2">
-                        <span>INDEX</span>
-                        <span>TIMESTAMP</span>
-                    </div>
-                    {timestamps.map((time, idx) => (
-                        <div key={idx} className="grid grid-cols-2 gap-2 py-1 hover:bg-cyber-cyan/5 transition-colors">
-                            <span className="text-cyber-muted">[{idx}]</span>
-                            <span className="text-cyber-text">{time}</span>
-                        </div>
-                    ))}
+                <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
+                    <div className="text-cyber-cyan text-[10px] font-mono mb-2 uppercase tracking-widest">Log B: 24-Hour Format ({LOG_B.length} Entries)</div>
+                    <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                        {`String[] logB = {\n    ${LOG_B.map(t => `"${t}"`).join(', ')}\n};`}
+                    </pre>
                 </div>
 
-                <div className="space-y-3 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
-                        <input type="checkbox" checked={conversionComplete} onChange={() => setConversionComplete(!conversionComplete)} className="hidden" />
-                        <span className={`w-3 h-3 border ${conversionComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">AM/PM to 24-hour conversion (10 pts)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
-                        <input type="checkbox" checked={sortingComplete} onChange={() => setSortingComplete(!sortingComplete)} className="hidden" />
-                        <span className={`w-3 h-3 border ${sortingComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">Chronological sorting (10 pts)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
-                        <input type="checkbox" checked={gapIdentified} onChange={() => setGapIdentified(!gapIdentified)} className="hidden" />
-                        <span className={`w-3 h-3 border ${gapIdentified ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">120-second gap identified (10 pts)</span>
-                    </label>
+                <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
+                    <div className="text-cyber-yellow text-[10px] font-mono mb-2 uppercase tracking-widest">Log C: AM/PM Format ({LOG_C.length} Entries)</div>
+                    <pre className="text-cyber-yellow font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                        {`String[] logC = {\n    ${LOG_C.map(t => `"${t}"`).join(', ')}\n};`}
+                    </pre>
                 </div>
+            </div>
 
-                <div>
-                    <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
-                        Sum of Indices (Second Timestamp)
+            {/* Code Compiler */}
+            <CodeCompiler phaseLabel="Phase 1 — Timestamp Analysis" onUseOutput={(val) => setBreachKey(val)} />
+
+            {/* Single key input */}
+            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
+                <div className="flex items-center justify-between mb-2">
+                    <label className="text-cyber-muted text-[10px] font-mono uppercase tracking-widest">
+                        Breach Key 1 — Index of the 120-second gap
                     </label>
-                    <input
-                        type="number"
-                        value={indicesSum}
-                        onChange={(e) => setIndicesSum(e.target.value)}
-                        placeholder="Enter index sum"
-                        className="input-cyber text-center text-lg"
-                    />
+                    <span className="text-[10px] text-cyber-cyan font-mono">INDEX #</span>
                 </div>
+                <p className="text-cyber-muted text-xs font-mono mb-2">
+                    Use the compiler above to merge, sort, and find the two consecutive timestamps exactly <span className="text-cyber-cyan font-bold">120 seconds</span> apart.
+                    Enter the <span className="text-cyber-red font-bold">index of the second timestamp</span> in that pair.
+                </p>
+                <input
+                    type="number"
+                    value={breachKey}
+                    onChange={(e) => setBreachKey(e.target.value)}
+                    placeholder="Enter index number"
+                    className="input-cyber text-center text-lg font-mono"
+                />
             </div>
 
             {message && (
@@ -138,16 +308,19 @@ function TimeGapPuzzle({
 
             <button
                 onClick={handleSubmit}
-                disabled={!indicesSum || submitting}
+                disabled={!breachKey || submitting}
                 className="btn-neon w-full"
             >
-                {submitting ? 'VALIDATING...' : 'UNLOCK KEY 1'}
+                {submitting ? 'ANALYZING...' : 'UNLOCK KEY 1'}
             </button>
         </div>
     );
 }
 
+
+// ═══════════════════════════════════════════════════════════════
 // Phase 2: Holy Trinity
+// ═══════════════════════════════════════════════════════════════
 function HolyTrinityPuzzle({
     onComplete,
     disabled
@@ -160,15 +333,17 @@ function HolyTrinityPuzzle({
     const [lengthMathCheckComplete, setLengthMathCheckComplete] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [systemMap, setSystemMap] = useState<Array<{ rowId: number; folder: string; size: number }>>([]);
+    const [loadingData, setLoadingData] = useState(true);
 
-    // Sample System Map data (50 rows in reality)
-    const systemMap = [
-        { id: 'ROW-10', folder: 'DATA', size: 120 },
-        { id: 'ROW-15', folder: 'LOG', size: 99 },
-        { id: 'ROW-23', folder: 'TMP', size: 45 },
-        { id: 'ROW-42', folder: 'COIN', size: 180 },
-        { id: 'ROW-55', folder: 'SYS', size: 333 },
-    ];
+    useEffect(() => {
+        if (!disabled) {
+            api.getPhase2Data().then((data: any) => {
+                setSystemMap(data.systemMap || []);
+                setLoadingData(false);
+            }).catch(() => setLoadingData(false));
+        }
+    }, [disabled]);
 
     const handleSubmit = async () => {
         if (!rowId) return;
@@ -208,29 +383,60 @@ function HolyTrinityPuzzle({
         );
     }
 
+    if (loadingData) {
+        return (
+            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-border text-center">
+                <div className="loader mx-auto mb-2" />
+                <p className="text-cyber-cyan font-mono text-sm animate-pulse">Loading system map...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-cyber-cyan">🔍</span>
                     <p className="text-cyber-muted text-sm font-mono">
-                        Apply the Rule of Three: Find the folder with exactly 2 vowels (O, I), exactly 4 characters long, and file size multiple of 3.
+                        Apply the Rule of Three: Find the folder with exactly <span className="text-cyber-cyan font-bold">2 vowels (O, I)</span>, exactly <span className="text-cyber-cyan font-bold">4 characters long</span>, and file size is a <span className="text-cyber-cyan font-bold">multiple of 3</span>.
                     </p>
                 </div>
 
-                <div className="bg-cyber-darker rounded border border-cyber-border p-4 font-mono text-sm mb-6">
-                    <div className="grid grid-cols-3 gap-2 text-cyber-muted border-b border-cyber-border pb-2 mb-2">
-                        <span>ROW ID</span>
-                        <span>FOLDER</span>
-                        <span>SIZE</span>
+                {/* System map table */}
+                <div className="bg-cyber-darker rounded border border-cyber-border p-4 font-mono text-sm mb-6 max-h-72 overflow-y-auto">
+                    <div className="grid grid-cols-6 gap-2 text-cyber-muted border-b border-cyber-border pb-2 mb-2 sticky top-0 bg-cyber-darker">
+                        <span className="col-span-1">ROW ID</span>
+                        <span className="col-span-1">FOLDER</span>
+                        <span className="col-span-1">SIZE</span>
+                        <span className="col-span-1">ROW ID</span>
+                        <span className="col-span-1">FOLDER</span>
+                        <span className="col-span-1">SIZE</span>
                     </div>
-                    {systemMap.map((row) => (
-                        <div key={row.id} className="grid grid-cols-3 gap-2 py-1 hover:bg-cyber-cyan/5 transition-colors">
-                            <span className="text-cyber-muted">{row.id}</span>
-                            <span className="text-cyber-text">{row.folder}</span>
-                            <span className="text-cyber-text">{row.size}</span>
-                        </div>
-                    ))}
+                    {/* Display in two-column layout */}
+                    {Array.from({ length: 25 }).map((_, i) => {
+                        const left = systemMap[i];
+                        const right = systemMap[i + 25];
+                        return (
+                            <div key={i} className="grid grid-cols-6 gap-2 py-1 hover:bg-cyber-cyan/5 transition-colors text-xs">
+                                {left && (
+                                    <>
+                                        <span className="text-cyber-muted">{left.rowId}</span>
+                                        <span className="text-cyber-text">{left.folder}</span>
+                                        <span className="text-cyber-text">{left.size}</span>
+                                    </>
+                                )}
+                                {!left && <><span /><span /><span /></>}
+                                {right && (
+                                    <>
+                                        <span className="text-cyber-muted">{right.rowId}</span>
+                                        <span className="text-cyber-text">{right.folder}</span>
+                                        <span className="text-cyber-text">{right.size}</span>
+                                    </>
+                                )}
+                                {!right && <><span /><span /><span /></>}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 <div className="space-y-3 mb-4">
@@ -246,16 +452,20 @@ function HolyTrinityPuzzle({
                     </label>
                 </div>
 
+                <div className="mb-6">
+                    <CodeCompiler phaseLabel="Phase 2 — System Map Filter" onUseOutput={(val) => setRowId(val)} />
+                </div>
+
                 <div>
                     <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
-                        Row ID
+                        Row ID (Breach Key 2)
                     </label>
                     <input
                         type="text"
                         value={rowId}
-                        onChange={(e) => setRowId(e.target.value.toUpperCase())}
-                        placeholder="ROW-XX"
-                        className="input-cyber text-center text-lg"
+                        onChange={(e) => setRowId(e.target.value)}
+                        placeholder="Enter Row ID"
+                        className="input-cyber text-center text-lg w-full"
                     />
                 </div>
             </div>
@@ -277,7 +487,10 @@ function HolyTrinityPuzzle({
     );
 }
 
+
+// ═══════════════════════════════════════════════════════════════
 // Phase 3: The Hexa Vault
+// ═══════════════════════════════════════════════════════════════
 function HexaVaultPuzzle({
     onComplete,
     disabled
@@ -286,13 +499,12 @@ function HexaVaultPuzzle({
     disabled: boolean;
 }) {
     const [riddleAnswer, setRiddleAnswer] = useState('');
-    const [base64CleaningComplete, setBase64CleaningComplete] = useState(false);
-    const [hexConversionComplete, setHexConversionComplete] = useState(false);
+    const [hexCleaningComplete, setHexCleaningComplete] = useState(false);
+    const [hexDecodingComplete, setHexDecodingComplete] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Sample encoded string (in reality, this would be the actual Base64 string with symbols)
-    const encodedString = "#!@VEhFIE1PUkUgWU9VIFRBS0UsIFRIRSBNT1JFIFlPVSBMRUFWRSBCRUhJTkQu";
+    const encryptedString = '#4%3@!4^5&*(4)9$4#e%2@0!2^0&*(4)8$4#6%6@1!6^3&*(6)b$2@0!7^4&*(6)8$6@1!7^3&*(2)0$6@1!2^0&*(6)8$6@5!6^1&*(6)4$2@0!6^1&*(6)e$6@4!2^0&*(6)1$2@0!7^4&*(6)1$6@9!6^c$2@0!6^2&*(6)5$7@4!2^0&*(6)e$6@f!2^0&*(6)6$6@f!6^4&*(7)9$3@f';
 
     const handleSubmit = async () => {
         if (!riddleAnswer) return;
@@ -302,8 +514,8 @@ function HexaVaultPuzzle({
         try {
             const response = await api.submitRound2Phase3({
                 riddleAnswer,
-                base64CleaningComplete,
-                hexConversionComplete
+                hexCleaningComplete,
+                hexDecodingComplete
             }) as {
                 success: boolean;
                 message: string;
@@ -338,26 +550,30 @@ function HexaVaultPuzzle({
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-cyber-cyan">🔐</span>
                     <p className="text-cyber-muted text-sm font-mono">
-                        Decrypt the vault: Clean Base64 → Decode to Hex → Convert to ASCII → Solve the riddle
+                        Decrypt the vault: Strip noise characters → Extract hex digits → Convert hex to ASCII → Solve the riddle
                     </p>
                 </div>
 
                 <div className="bg-cyber-darker rounded border border-cyber-border p-4 font-mono text-sm mb-6">
                     <div className="text-cyber-muted text-xs mb-2">ENCRYPTED DATA:</div>
-                    <div className="text-cyber-text break-all">{encodedString}</div>
+                    <div className="text-cyber-text break-all text-xs leading-relaxed">{encryptedString}</div>
                 </div>
 
                 <div className="space-y-3 mb-4">
                     <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
-                        <input type="checkbox" checked={base64CleaningComplete} onChange={() => setBase64CleaningComplete(!base64CleaningComplete)} className="hidden" />
-                        <span className={`w-3 h-3 border ${base64CleaningComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">Layer 1: Base64 cleaning (10 pts)</span>
+                        <input type="checkbox" checked={hexCleaningComplete} onChange={() => setHexCleaningComplete(!hexCleaningComplete)} className="hidden" />
+                        <span className={`w-3 h-3 border ${hexCleaningComplete ? 'bg-cyber-cyan' : ''}`} />
+                        <span className="text-xs font-mono text-cyber-muted">Layer 1: Strip noise characters & extract hex (10 pts)</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
-                        <input type="checkbox" checked={hexConversionComplete} onChange={() => setHexConversionComplete(!hexConversionComplete)} className="hidden" />
-                        <span className={`w-3 h-3 border ${hexConversionComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">Layer 2: Hex to ASCII (10 pts)</span>
+                        <input type="checkbox" checked={hexDecodingComplete} onChange={() => setHexDecodingComplete(!hexDecodingComplete)} className="hidden" />
+                        <span className={`w-3 h-3 border ${hexDecodingComplete ? 'bg-cyber-cyan' : ''}`} />
+                        <span className="text-xs font-mono text-cyber-muted">Layer 2: Hex to ASCII conversion (10 pts)</span>
                     </label>
+                </div>
+
+                <div className="mb-6">
+                    <CodeCompiler phaseLabel="Phase 3 — Hex Decryption" onUseOutput={(val) => setRiddleAnswer(val.toUpperCase())} />
                 </div>
 
                 <div>
@@ -369,7 +585,7 @@ function HexaVaultPuzzle({
                         value={riddleAnswer}
                         onChange={(e) => setRiddleAnswer(e.target.value.toUpperCase())}
                         placeholder="What has a head and a tail but no body?"
-                        className="input-cyber text-center text-lg"
+                        className="input-cyber text-center text-lg w-full"
                     />
                 </div>
             </div>
@@ -391,7 +607,10 @@ function HexaVaultPuzzle({
     );
 }
 
+
+// ═══════════════════════════════════════════════════════════════
 // Final Challenge: Round 2 Checkpoint
+// ═══════════════════════════════════════════════════════════════
 function FinalChallenge({
     unlocked,
     onComplete
@@ -448,7 +667,7 @@ function FinalChallenge({
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    placeholder="7-ROW-42-COIN"
+                    placeholder="KEY1-KEY2-KEY3"
                     className="input-cyber text-center text-xl tracking-[0.2em] font-bold"
                 />
 
@@ -470,7 +689,10 @@ function FinalChallenge({
     );
 }
 
+
+// ═══════════════════════════════════════════════════════════════
 // Main Page
+// ═══════════════════════════════════════════════════════════════
 export default function Round2Page() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);

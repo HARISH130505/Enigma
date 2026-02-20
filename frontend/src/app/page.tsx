@@ -63,16 +63,6 @@ export default function LandingPage() {
       <div className="relative z-10 w-full max-w-2xl">
         {/* Logo and Title */}
         <div className="text-center mb-12">
-          <div className="mb-6">
-            <div className="inline-block p-4 border-2 border-cyber-cyan/50 rounded-lg bg-cyber-dark/50 backdrop-blur">
-              <svg viewBox="0 0 100 100" className="w-20 h-20 mx-auto text-cyber-cyan">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-                <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5" />
-                <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="2" />
-                <text x="50" y="55" textAnchor="middle" fill="currentColor" fontSize="20" fontFamily="Orbitron">?</text>
-              </svg>
-            </div>
-          </div>
 
           <h1 className="text-5xl md:text-7xl font-orbitron font-black mb-4">
             <GlitchText text="MISSION" className="text-cyber-text" />

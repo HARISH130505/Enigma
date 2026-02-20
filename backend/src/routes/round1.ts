@@ -301,8 +301,8 @@ router.post('/escape-code', authenticateTeam, async (req: AuthRequest, res: Resp
                 .eq('session_id', req.sessionId)
                 .eq('round_number', 1);
 
-            // Unlock round 2 and reset timer to 45 minutes
-            const newExpiresAt = new Date(Date.now() + 45 * 60 * 1000).toISOString();
+            // Unlock round 2 and reset timer to 60 minutes
+            const newExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
             await supabase
                 .from('game_sessions')
                 .update({ current_round: 2, expires_at: newExpiresAt })

@@ -9,6 +9,7 @@ import gameRoutes from './routes/game';
 import round1Routes from './routes/round1';
 import round2Routes from './routes/round2';
 import round3Routes from './routes/round3';
+import compilerRoutes from './routes/compiler';
 import adminRoutes from './routes/admin';
 
 dotenv.config();
@@ -45,6 +46,7 @@ app.use('/api/game', gameRoutes);
 app.use('/api/round1', round1Routes);
 app.use('/api/round2', round2Routes);
 app.use('/api/round3', round3Routes);
+app.use('/api/compiler', compilerRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Error handling

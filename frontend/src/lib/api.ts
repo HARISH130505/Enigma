@@ -159,11 +159,20 @@ class ApiClient {
     }
 
     // Round 2 endpoints (The Mischief Triathlon)
+    async getPhase1Data() {
+        return this.request<{
+            logA: string[];
+            logB: string[];
+            logC: string[];
+            conversionChallenge: string;
+            sortedIndexChallenge: number;
+        }>('/round2/phase/1/data');
+    }
+
     async submitRound2Phase1(data: {
-        indicesSum: number;
-        conversionComplete: boolean;
-        sortingComplete: boolean;
-        gapIdentified: boolean;
+        conversionAnswer: string;
+        sortedTimestamp: string;
+        breachKey: number;
     }) {
         return this.request('/round2/phase/1', {
             method: 'POST',
@@ -184,8 +193,8 @@ class ApiClient {
 
     async submitRound2Phase3(data: {
         riddleAnswer: string;
-        base64CleaningComplete: boolean;
-        hexConversionComplete: boolean;
+        hexCleaningComplete: boolean;
+        hexDecodingComplete: boolean;
     }) {
         return this.request('/round2/phase/3', {
             method: 'POST',
@@ -202,6 +211,23 @@ class ApiClient {
 
     async getRound2Status() {
         return this.request('/round2/status');
+    }
+
+    async getPhase2Data() {
+        return this.request<{
+            systemMap: Array<{ rowId: number; folder: string; size: number }>;
+        }>('/round2/phase/2/data');
+    }
+
+    // Compiler
+    async runCode(language: string, code: string) {
+        return this.request<{
+            output: string;
+            error: string | null;
+        }>('/compiler/run', {
+            method: 'POST',
+            body: JSON.stringify({ language, code }),
+        });
     }
 
     // Round 3 endpoints (The Hexa Vault)
