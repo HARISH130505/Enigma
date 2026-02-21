@@ -7,10 +7,10 @@ const router = Router();
 
 // Correct answers
 const CORRECT_ANSWERS = {
-    key1: parseInt(process.env.R2_KEY1 || '45'),   // Index of second timestamp in 120-second gap
-    key2: process.env.R2_KEY2 || '149',             // Row ID for COIN (the one that passes all 3 rules)
-    key3: process.env.R2_KEY3 || 'COIN',            // Riddle answer
-    finalToken: process.env.R2_FINAL_TOKEN || '45-149-COIN', // Combined audit token
+    key1: parseInt(process.env.R2_KEY1 || '11'),   // Index of second timestamp in 120-second gap
+    key2: process.env.R2_KEY2 || '428',             // Row ID (IOU)
+    key3: process.env.R2_KEY3 || 'CIPHER',            // Riddle answer
+    finalToken: process.env.R2_FINAL_TOKEN || '11-428-CIPHER', // Combined audit token
 };
 
 // Helper to log attempt
@@ -41,26 +41,19 @@ async function checkRound2Access(sessionId: string): Promise<boolean> {
 // Phase 1: The 120-Second Shadow
 // ═══════════════════════════════════════════════════════════════
 
-// Log A: 24-Hour Format (20 Entries)
+// Log A
 const LOG_A: string[] = [
-    '08:00:15', '08:12:45', '08:22:10', '08:35:00', '08:45:30',
-    '09:10:00', '09:25:15', '09:40:00', '10:05:20', '10:15:00',
-    '11:00:00', '11:15:45', '11:30:10', '11:45:00', '12:00:30',
-    '13:15:00', '13:30:45', '13:45:10', '14:10:00', '14:25:30',
+    '35400', '35610', '35970', '36330', '36750', '37110'
 ];
 
-// Log B: 24-Hour Format (15 Entries)
+// Log B
 const LOG_B: string[] = [
-    '08:05:00', '08:15:30', '08:30:00', '08:50:00', '09:05:45',
-    '09:30:10', '09:55:00', '10:20:30', '10:45:00', '11:10:15',
-    '11:55:00', '12:15:45', '12:45:10', '13:00:00', '14:00:30',
+    '35520', '35820', '36090', '36510', '37020'
 ];
 
-// Log C: AM/PM Format (15 Entries)
-const LOG_C_AMPM: string[] = [
-    '08:02:30 AM', '08:20:00 AM', '08:32:15 AM', '08:40:45 AM', '09:00:00 AM',
-    '10:00:00 AM', '10:30:00 AM', '11:05:00 AM', '12:30:00 PM', '01:05:00 PM',
-    '02:00:00 PM', '02:05:00 PM', '02:07:00 PM', '02:15:45 PM', '02:30:00 PM',
+// Log C
+const LOG_C: string[] = [
+    '09:50:30', '10:01:30', '10:08:30', '10:18:30'
 ];
 
 // Convert AM/PM to 24-hour format
@@ -81,32 +74,32 @@ function timeToSeconds(time: string): number {
 }
 
 // Pre-compute: Convert Log C, merge, sort, and find the gap
-const logCConverted = LOG_C_AMPM.map(convertAmPmTo24);
+const logCConverted = LOG_C.map(timeToSeconds).map(String);
 const allTimestamps = [...LOG_A, ...LOG_B, ...logCConverted].sort(
-    (a, b) => timeToSeconds(a) - timeToSeconds(b)
+    (a, b) => parseInt(a) - parseInt(b)
 );
 
 // Find the 120-second gap
 let gapIndex = -1;
 for (let i = 1; i < allTimestamps.length; i++) {
-    const diff = timeToSeconds(allTimestamps[i]) - timeToSeconds(allTimestamps[i - 1]);
+    const diff = parseInt(allTimestamps[i]) - parseInt(allTimestamps[i - 1]);
     if (diff === 120) {
         gapIndex = i;
         break;
     }
 }
 
-// Pick a conversion challenge from Log C — use "02:07:00 PM" (index 12)
-const CONVERSION_CHALLENGE = '02:07:00 PM';
-const CONVERSION_ANSWER = convertAmPmTo24(CONVERSION_CHALLENGE); // "14:07:00"
+// Pick a conversion challenge from Log C
+const CONVERSION_CHALLENGE = '10:01:30';
+const CONVERSION_ANSWER = timeToSeconds(CONVERSION_CHALLENGE).toString();
 
-// Pick a sorted index challenge — use index 25 (middle area)
-const SORTED_INDEX_CHALLENGE = 25;
+// Pick a sorted index challenge
+const SORTED_INDEX_CHALLENGE = 6;
 
 const PHASE1_ANSWERS = {
     conversionAnswer: CONVERSION_ANSWER,
     sortedTimestamp: allTimestamps[SORTED_INDEX_CHALLENGE],
-    breachKey: gapIndex,
+    breachKey: gapIndex + (gapIndex - 1), // sum of indexes
 };
 
 // Log the computed answers at startup for debugging
@@ -133,67 +126,66 @@ allTimestamps.forEach((t, i) => {
 // ═══════════════════════════════════════════════════════════════
 
 const SYSTEM_MAP = [
-    { rowId: 101, folder: 'DATA', size: 12 },
-    { rowId: 102, folder: 'FILE', size: 15 },
-    { rowId: 103, folder: 'NODE', size: 20 },
-    { rowId: 104, folder: 'BASE', size: 33 },
-    { rowId: 105, folder: 'LINK', size: 18 },
-    { rowId: 106, folder: 'USER', size: 21 },
-    { rowId: 107, folder: 'PASS', size: 10 },
-    { rowId: 108, folder: 'CODE', size: 45 },
-    { rowId: 109, folder: 'TEST', size: 12 },
-    { rowId: 110, folder: 'HOST', size: 30 },
-    { rowId: 111, folder: 'PORT', size: 22 },
-    { rowId: 112, folder: 'PATH', size: 14 },
-    { rowId: 113, folder: 'META', size: 27 },
-    { rowId: 114, folder: 'NULL', size: 11 },
-    { rowId: 115, folder: 'TRUE', size: 36 },
-    { rowId: 116, folder: 'VOID', size: 19 },
-    { rowId: 117, folder: 'ROOT', size: 42 },
-    { rowId: 118, folder: 'BLOC', size: 25 },
-    { rowId: 119, folder: 'SYNC', size: 13 },
-    { rowId: 120, folder: 'BYTE', size: 50 },
-    { rowId: 121, folder: 'BITS', size: 15 },
-    { rowId: 122, folder: 'WORK', size: 24 },
-    { rowId: 123, folder: 'TASK', size: 31 },
-    { rowId: 124, folder: 'ZONE', size: 18 },
-    { rowId: 125, folder: 'AREA', size: 20 },
-    { rowId: 126, folder: 'PLUG', size: 33 },
-    { rowId: 127, folder: 'FLOW', size: 27 },
-    { rowId: 128, folder: 'GRID', size: 16 },
-    { rowId: 129, folder: 'COIN', size: 44 },
-    { rowId: 130, folder: 'BACK', size: 12 },
-    { rowId: 131, folder: 'SAVE', size: 15 },
-    { rowId: 132, folder: 'OPEN', size: 18 },
-    { rowId: 133, folder: 'SEND', size: 21 },
-    { rowId: 134, folder: 'READ', size: 30 },
-    { rowId: 135, folder: 'EDIT', size: 22 },
-    { rowId: 136, folder: 'LOCK', size: 14 },
-    { rowId: 137, folder: 'CHAT', size: 27 },
-    { rowId: 138, folder: 'MAIL', size: 33 },
-    { rowId: 139, folder: 'LOGS', size: 18 },
-    { rowId: 140, folder: 'LIST', size: 10 },
-    { rowId: 141, folder: 'MENU', size: 45 },
-    { rowId: 142, folder: 'VIEW', size: 12 },
-    { rowId: 143, folder: 'JOIN', size: 32 },
-    { rowId: 144, folder: 'PINS', size: 22 },
-    { rowId: 145, folder: 'TEMP', size: 14 },
-    { rowId: 146, folder: 'TIME', size: 27 },
-    { rowId: 147, folder: 'DATE', size: 11 },
-    { rowId: 148, folder: 'POST', size: 36 },
-    { rowId: 149, folder: 'COIN', size: 39 },
-    { rowId: 150, folder: 'QUIT', size: 19 },
+    { rowId: 101, folder: 'AIP', size: 21 },
+    { rowId: 102, folder: 'DOG', size: 25 },
+    { rowId: 103, folder: 'SUN', size: 12 },
+    { rowId: 104, folder: 'NET', size: 18 },
+    { rowId: 105, folder: 'ARC', size: 30 },
+    { rowId: 106, folder: 'SYS', size: 14 },
+    { rowId: 107, folder: 'APP', size: 17 },
+    { rowId: 108, folder: 'TMP', size: 9 },
+    { rowId: 109, folder: 'DEV', size: 20 },
+    { rowId: 110, folder: 'LOG', size: 11 },
+    { rowId: 111, folder: 'RAW', size: 16 },
+    { rowId: 112, folder: 'BIN', size: 22 },
+    { rowId: 113, folder: 'SEC', size: 19 },
+    { rowId: 114, folder: 'API', size: 28 },
+    { rowId: 115, folder: 'CPU', size: 33 },
+    { rowId: 116, folder: 'RAM', size: 27 },
+    { rowId: 117, folder: 'DBX', size: 40 },
+    { rowId: 118, folder: 'XYZ', size: 24 },
+    { rowId: 119, folder: 'EON', size: 26 },
+    { rowId: 120, folder: 'OIL', size: 32 },
+    { rowId: 121, folder: 'ICE', size: 18 },
+    { rowId: 122, folder: 'WEB', size: 15 },
+    { rowId: 123, folder: 'UIX', size: 39 },
+    { rowId: 124, folder: 'KRN', size: 41 },
+    { rowId: 125, folder: 'LNX', size: 12 },
+    { rowId: 126, folder: 'IMG', size: 17 },
+    { rowId: 127, folder: 'DOC', size: 23 },
+    { rowId: 128, folder: 'TXT', size: 21 },
+    { rowId: 129, folder: 'CSV', size: 14 },
+    { rowId: 130, folder: 'XML', size: 45 },
+    { rowId: 131, folder: 'JSON', size: 30 },
+    { rowId: 132, folder: 'AUTH', size: 36 },
+    { rowId: 133, folder: 'CORE', size: 27 },
+    { rowId: 134, folder: 'MAIL', size: 19 },
+    { rowId: 135, folder: 'HASH', size: 42 },
+    { rowId: 136, folder: 'KEY', size: 18 },
+    { rowId: 137, folder: 'BOT', size: 13 },
+    { rowId: 138, folder: 'OPS', size: 29 },
+    { rowId: 139, folder: 'RUN', size: 22 },
+    { rowId: 140, folder: 'QRY', size: 31 },
+    { rowId: 141, folder: 'CFG', size: 34 },
+    { rowId: 142, folder: 'TMP2', size: 21 },
+    { rowId: 143, folder: 'MOD', size: 16 },
+    { rowId: 144, folder: 'ENV', size: 15 },
+    { rowId: 145, folder: 'AAA', size: 10 },
+    { rowId: 146, folder: 'OOO', size: 14 },
+    { rowId: 147, folder: 'UUU', size: 17 },
+    { rowId: 148, folder: 'AEO', size: 50 },
+    { rowId: 149, folder: 'EIU', size: 52 },
+    { rowId: 428, folder: 'IOU', size: 45 },
 ];
 
 // ═══════════════════════════════════════════════════════════════
 // Phase 3: The Hexa Vault — Encrypted String
 // ═══════════════════════════════════════════════════════════════
 
-const ENCRYPTED_STRING = '#4%3@!4^5&*(4)9$4#e%2@0!2^0&*(4)8$4#6%6@1!6^3&*(6)b$2@0!7^4&*(6)8$6@1!7^3&*(2)0$6@1!2^0&*(6)8$6@5!6^1&*(6)4$2@0!6^1&*(6)e$6@4!2^0&*(6)1$2@0!7^4&*(6)1$6@9!6^c$2@0!6^2&*(6)5$7@4!2^0&*(6)e$6@f!2^0&*(6)6$6@f!6^4&*(7)9$3@f';
+const ENCRYPTED_STRING = '$$492068696465207365637265747320696e20636f64652e205768617420616d20493f##';
 
-// Cleaned hex: 434f494e20204861636b207468612061206865616420616e642061207461696c20626574206e6f20626f64793f
-// Decoded: "COIN  Hack tha a head and a tail bet no body?"
-// The riddle: "Has a head and a tail but no body?" → Answer: COIN
+// Decoded: "I hide secrets in code. What am I?"
+// Answer: CIPHER
 
 // ═══════════════════════════════════════════════════════════════
 // Routes
@@ -208,7 +200,7 @@ router.get('/phase/1/data', authenticateTeam, async (req: AuthRequest, res: Resp
         res.json({
             logA: LOG_A,
             logB: LOG_B,
-            logC: LOG_C_AMPM,
+            logC: LOG_C,
             conversionChallenge: CONVERSION_CHALLENGE,
             sortedIndexChallenge: SORTED_INDEX_CHALLENGE,
         });
@@ -327,7 +319,7 @@ router.post('/phase/2', authenticateTeam, async (req: AuthRequest, res: Response
 
             res.json({
                 success: true,
-                message: `KEY 2 UNLOCKED: Row ${rowId} — COIN identified. (+${pointsEarned} Points)`,
+                message: `KEY 2 UNLOCKED: Row ${rowId} — IOU identified. (+${pointsEarned} Points)`,
                 accessGranted: true,
                 pointsEarned
             });

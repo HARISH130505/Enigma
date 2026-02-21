@@ -19,7 +19,7 @@ interface RoundStatus {
 // Code Compiler Component (embedded in each phase)
 // ═══════════════════════════════════════════════════════════════
 function CodeCompiler({ phaseLabel, onUseOutput }: { phaseLabel: string; onUseOutput?: (output: string) => void }) {
-    const [language, setLanguage] = useState<'javascript' | 'python' | 'java'>('java');
+    const [language, setLanguage] = useState<'python' | 'java' | 'javascript'>('python');
     const [code, setCode] = useState('');
     const [output, setOutput] = useState('');
     const [error, setError] = useState('');
@@ -79,14 +79,18 @@ function CodeCompiler({ phaseLabel, onUseOutput }: { phaseLabel: string; onUseOu
                 <div className="p-4 bg-cyber-darker space-y-3">
                     {/* Language selector */}
                     <div className="flex items-center gap-2">
-                        {(['java', 'python', 'javascript'] as const).map((lang) => (
+                        {(['python', 'java', 'javascript'] as const).map((lang) => (
                             <button
                                 key={lang}
                                 onClick={() => setLanguage(lang)}
                                 className={`
                                     px-3 py-1.5 rounded font-mono text-xs font-bold uppercase transition-all
                                     ${language === lang
-                                        ? 'bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan'
+                                        ? lang === 'python'
+                                            ? 'bg-[#3776AB]/20 text-[#3776AB] border border-[#3776AB]'
+                                            : lang === 'java'
+                                                ? 'bg-[#b07219]/20 text-[#b07219] border border-[#b07219]'
+                                                : 'bg-[#F7DF1E]/20 text-[#F7DF1E] border border-[#F7DF1E]'
                                         : 'bg-cyber-dark text-cyber-muted border border-cyber-border hover:border-cyber-cyan/50'
                                     }
                                 `}
@@ -162,22 +166,15 @@ function CodeCompiler({ phaseLabel, onUseOutput }: { phaseLabel: string; onUseOu
 // ═══════════════════════════════════════════════════════════════
 // Hardcoded log arrays for Phase 1
 const LOG_A = [
-    "08:00:15", "08:12:45", "08:22:10", "08:35:00", "08:45:30",
-    "09:10:00", "09:25:15", "09:40:00", "10:05:20", "10:15:00",
-    "11:00:00", "11:15:45", "11:30:10", "11:45:00", "12:00:30",
-    "13:15:00", "13:30:45", "13:45:10", "14:10:00", "14:25:30"
+    "35400", "35610", "35970", "36330", "36750", "37110"
 ];
 
 const LOG_B = [
-    "08:05:00", "08:15:30", "08:30:00", "08:50:00", "09:05:45",
-    "09:30:10", "09:55:00", "10:20:30", "10:45:00", "11:10:15",
-    "11:55:00", "12:15:45", "12:45:10", "13:00:00", "14:00:30"
+    "35520", "35820", "36090", "36510", "37020"
 ];
 
 const LOG_C = [
-    "08:02:30 AM", "08:20:00 AM", "08:32:15 AM", "08:40:45 AM", "09:00:00 AM",
-    "10:00:00 AM", "10:30:00 AM", "11:05:00 AM", "12:30:00 PM", "01:05:00 PM",
-    "02:00:00 PM", "02:05:00 PM", "02:07:00 PM", "02:15:45 PM", "02:30:00 PM"
+    "09:50:30", "10:01:30", "10:08:30", "10:18:30"
 ];
 
 const CONVERSION_CHALLENGE = "02:07:00 PM";
@@ -247,7 +244,7 @@ function TimeGapPuzzle({
                 <p className="text-cyber-muted text-xs font-mono leading-relaxed">
                     The mole accessed the system across three servers to hide their tracks.
                     You have <span className="text-cyber-text font-bold">{totalTimestamps} timestamps</span> across 3 server logs.
-                    Server C uses AM/PM format. Convert, merge, sort, and find the two consecutive timestamps
+                    Server C uses HH:MM:SS format. Convert Log C to seconds, merge all into one array, sort them chronologically, and find the two consecutive timestamps
                     that are exactly <span className="text-cyber-cyan font-bold">120 seconds</span> apart.
                 </p>
             </div>
@@ -255,23 +252,20 @@ function TimeGapPuzzle({
             {/* Log arrays displayed in code format */}
             <div className="space-y-4">
                 <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
-                    <div className="text-cyber-cyan text-[10px] font-mono mb-2 uppercase tracking-widest">Log A: 24-Hour Format ({LOG_A.length} Entries)</div>
                     <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                        {`String[] logA = {\n    ${LOG_A.map(t => `"${t}"`).join(', ')}\n};`}
+                        {`Log A\n[${LOG_A.join(', ')}]`}
                     </pre>
                 </div>
 
                 <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
-                    <div className="text-cyber-cyan text-[10px] font-mono mb-2 uppercase tracking-widest">Log B: 24-Hour Format ({LOG_B.length} Entries)</div>
                     <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                        {`String[] logB = {\n    ${LOG_B.map(t => `"${t}"`).join(', ')}\n};`}
+                        {` Log B\n[${LOG_B.join(', ')}]`}
                     </pre>
                 </div>
 
                 <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
-                    <div className="text-cyber-yellow text-[10px] font-mono mb-2 uppercase tracking-widest">Log C: AM/PM Format ({LOG_C.length} Entries)</div>
                     <pre className="text-cyber-yellow font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                        {`String[] logC = {\n    ${LOG_C.map(t => `"${t}"`).join(', ')}\n};`}
+                        {`Log C\n[${LOG_C.map(t => `"${t}"`).join(', ')}]`}
                     </pre>
                 </div>
             </div>
@@ -288,8 +282,8 @@ function TimeGapPuzzle({
                     <span className="text-[10px] text-cyber-cyan font-mono">INDEX #</span>
                 </div>
                 <p className="text-cyber-muted text-xs font-mono mb-2">
-                    Use the compiler above to merge, sort, and find the two consecutive timestamps exactly <span className="text-cyber-cyan font-bold">120 seconds</span> apart.
-                    Enter the <span className="text-cyber-red font-bold">index of the second timestamp</span> in that pair.
+                    Use the compiler above to merge, convert Log C, sort chronologicaly, and find the two consecutive timestamps exactly <span className="text-cyber-cyan font-bold">120 seconds</span> apart.
+                    Enter the <span className="text-cyber-red font-bold">sum of the index numbers</span> of the two consecutive timestamps.
                 </p>
                 <input
                     type="number"
@@ -398,8 +392,14 @@ function HolyTrinityPuzzle({
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-cyber-cyan">🔍</span>
                     <p className="text-cyber-muted text-sm font-mono">
-                        Apply the Rule of Three: Find the folder with exactly <span className="text-cyber-cyan font-bold">2 vowels (O, I)</span>, exactly <span className="text-cyber-cyan font-bold">4 characters long</span>, and file size is a <span className="text-cyber-cyan font-bold">multiple of 3</span>.
+                        The mole's filtration system is wiped. Debug the provided script below to identify the stolen file from the System Map.
+                        Retrieve "The Rules" you must follow to find the ID Number of the matching row.
                     </p>
+                </div>
+
+                <div className="bg-cyber-darker rounded border border-cyber-border p-4 font-mono text-sm mb-6 max-h-72 overflow-y-auto">
+                    <div className="text-[10px] text-cyber-yellow mb-2 uppercase tracking-widest">system_validator.py [BUGGED]</div>
+                    <pre className="text-[11px] leading-relaxed text-cyber-muted"><code className="language-python">{`import sys\nimport os\n\nclass RuleEngine:\n\n    def __init__(self, version = "3.0"\n        self.version = version\n        self.rules = {\n            "a": "Rule:",\n            "b": "• Exactly 3 vowels",\n            "c": "• Exactly 3 characters",\n            "d": "• File size multiple of 3"\n        }\n\n    def validate(self):\n        print("=" * 40\n\n        for key value in self.rules.items():\n            if key != None\n                print(self.rules[key]\n\n        print("=" * 40))\n\ndef boot_sequence():\n    engine = RuleEngine(\n\n    try\n        engine.validate()\n    except Exception as e:\n        print("System Failure:", e\n\nif __name__ == "__main__"\n    boot_sequence()`}</code></pre>
                 </div>
 
                 {/* System map table */}
@@ -504,7 +504,7 @@ function HexaVaultPuzzle({
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const encryptedString = '#4%3@!4^5&*(4)9$4#e%2@0!2^0&*(4)8$4#6%6@1!6^3&*(6)b$2@0!7^4&*(6)8$6@1!7^3&*(2)0$6@1!2^0&*(6)8$6@5!6^1&*(6)4$2@0!6^1&*(6)e$6@4!2^0&*(6)1$2@0!7^4&*(6)1$6@9!6^c$2@0!6^2&*(6)5$7@4!2^0&*(6)e$6@f!2^0&*(6)6$6@f!6^4&*(7)9$3@f';
+    const encryptedString = '$$492068696465207365637265747320696e20636f64652e205768617420616d20493f##';
 
     const handleSubmit = async () => {
         if (!riddleAnswer) return;
@@ -584,7 +584,7 @@ function HexaVaultPuzzle({
                         type="text"
                         value={riddleAnswer}
                         onChange={(e) => setRiddleAnswer(e.target.value.toUpperCase())}
-                        placeholder="What has a head and a tail but no body?"
+                        placeholder="Enter Riddle Answer"
                         className="input-cyber text-center text-lg w-full"
                     />
                 </div>
@@ -613,9 +613,11 @@ function HexaVaultPuzzle({
 // ═══════════════════════════════════════════════════════════════
 function FinalChallenge({
     unlocked,
+    completed,
     onComplete
 }: {
     unlocked: boolean;
+    completed: boolean;
     onComplete: () => void;
 }) {
     const [code, setCode] = useState('');
@@ -641,6 +643,18 @@ function FinalChallenge({
             setSubmitting(false);
         }
     };
+
+    if (completed) {
+        return (
+            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center shadow-[0_0_15px_rgba(0,255,136,0.1)]">
+                <div className="text-4xl mb-4">✅</div>
+                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">CHECKPOINT VERIFIED</div>
+                <p className="text-cyber-green/70 text-sm font-mono tracking-tighter">
+                    Round 2 successfully completed. Awaiting further orders.
+                </p>
+            </div>
+        );
+    }
 
     if (!unlocked) {
         return (
@@ -783,22 +797,27 @@ export default function Round2Page() {
                     </h1>
                 </div>
 
-                <div className="flex flex-wrap items-center">
-                    <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border mr-8">
-                        <div className="text-xs text-cyber-muted font-mono mb-1">ROUND SCORE</div>
-                        <div className="text-2xl font-orbitron font-bold text-cyber-green">{status?.points || 0}</div>
+                <div className="flex items-center gap-1 md:gap-2">
+                    {/* Score Box */}
+                    <div className="flex flex-col items-center justify-center px-4 md:px-8 py-3 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+                        <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-1 font-bold">TOTAL SCORE</div>
+                        <div className="text-2xl md:text-3xl font-digital text-[#00ffff] leading-none">{status?.points || 0}</div>
                     </div>
 
+                    {/* Time Box */}
                     {expiresAt && (
-                        <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border mr-8">
-                            <div className="text-xs text-cyber-muted font-mono mb-1">TIME REMAINING</div>
-                            <Countdown expiresAt={expiresAt} />
+                        <div className="flex flex-col items-center justify-center px-6 md:px-10 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_15px_rgba(0,255,255,0.3)] z-10 scale-[1.05]">
+                            <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-2 font-bold">TIME REMAINING</div>
+                            <div className="text-3xl md:text-5xl font-digital text-[#00ffff] leading-none drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]">
+                                <Countdown expiresAt={expiresAt} className="text-[#00ffff]" />
+                            </div>
                         </div>
                     )}
 
+                    {/* Disconnect Box */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="px-6 py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all font-mono font-bold rounded"
+                        className="flex items-center justify-center px-4 md:px-8 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 text-[#00ffff] hover:bg-[#00ffff]/10 hover:shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-all font-orbitron font-bold uppercase tracking-widest md:text-lg shadow-[0_0_10px_rgba(0,255,255,0.2)]"
                     >
                         DISCONNECT
                     </button>
@@ -889,6 +908,7 @@ export default function Round2Page() {
                 <div className="lg:col-span-3">
                     <FinalChallenge
                         unlocked={status?.checkpointUnlocked || false}
+                        completed={status?.completed || false}
                         onComplete={handleAllComplete}
                     />
 

@@ -23,9 +23,10 @@ export default {
                 'cyber-border': '#30363d',
             },
             fontFamily: {
-                'orbitron': ['Orbitron', 'sans-serif'],
-                'mono': ['JetBrains Mono', 'monospace'],
-                'space': ['Space Grotesk', 'sans-serif'],
+                'orbitron': ['var(--font-orbitron)', 'Orbitron', 'sans-serif'],
+                'mono': ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
+                'space': ['var(--font-space)', 'Space Grotesk', 'sans-serif'],
+                'digital': ['var(--font-digital)', 'monospace'],
             },
             animation: {
                 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

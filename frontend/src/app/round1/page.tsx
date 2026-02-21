@@ -518,9 +518,11 @@ function RootCausePuzzle({
 // Escape Code Input Component
 function EscapeCodeInput({
     unlocked,
+    completed,
     onComplete
 }: {
     unlocked: boolean;
+    completed: boolean;
     onComplete: () => void;
 }) {
     const [code, setCode] = useState('');
@@ -550,6 +552,18 @@ function EscapeCodeInput({
             setSubmitting(false);
         }
     };
+
+    if (completed) {
+        return (
+            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center shadow-[0_0_15px_rgba(0,255,136,0.1)]">
+                <div className="text-4xl mb-4">✅</div>
+                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">ESCAPE CODE VERIFIED</div>
+                <p className="text-cyber-green/70 text-sm font-mono tracking-tighter">
+                    Round 1 successfully completed. Awaiting further orders.
+                </p>
+            </div>
+        );
+    }
 
     if (!unlocked) {
         return (
@@ -774,14 +788,6 @@ export default function Round1Page() {
                             ))}
                         </div>
                     </div>
-
-                    {/* Escape Code Section */}
-                    <div id="escape-code-section" className="mt-6 scroll-mt-20">
-                        <EscapeCodeInput
-                            unlocked={status?.escapeCodeUnlocked || false}
-                            onComplete={handleRoundComplete}
-                        />
-                    </div>
                 </div>
 
                 {/* Active Evidence Panel */}
@@ -828,6 +834,15 @@ export default function Round1Page() {
                                 />
                             )}
                         </div>
+                    </div>
+
+                    {/* Escape Code Section */}
+                    <div id="escape-code-section" className="mt-6 scroll-mt-20">
+                        <EscapeCodeInput
+                            unlocked={status?.escapeCodeUnlocked || false}
+                            completed={status?.completed || false}
+                            onComplete={handleRoundComplete}
+                        />
                     </div>
 
                     {/* Terminal Output */}

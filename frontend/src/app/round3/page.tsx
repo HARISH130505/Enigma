@@ -166,9 +166,12 @@ function FinalCheckpointPuzzle({
 
     if (disabled) {
         return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ ACCESS GRANTED</div>
-                <p className="text-cyber-muted text-sm">Mole identified. Mission complete.</p>
+            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center shadow-[0_0_15px_rgba(0,255,136,0.1)]">
+                <div className="text-4xl mb-4">✅</div>
+                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">MASTER KEY VERIFIED</div>
+                <p className="text-cyber-green/70 text-sm font-mono tracking-tighter">
+                    Mole identified. Mission complete.
+                </p>
             </div>
         );
     }
@@ -313,22 +316,27 @@ export default function Round3Page() {
                     </h1>
                 </div>
 
-                <div className="flex flex-wrap items-center">
-                    <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border mr-8">
-                        <div className="text-xs text-cyber-muted font-mono mb-1">ROUND SCORE</div>
-                        <div className="text-2xl font-orbitron font-bold text-cyber-green">{status?.points || 0}</div>
+                <div className="flex items-center gap-1 md:gap-2">
+                    {/* Score Box */}
+                    <div className="flex flex-col items-center justify-center px-4 md:px-8 py-3 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+                        <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-1 font-bold">TOTAL SCORE</div>
+                        <div className="text-2xl md:text-3xl font-digital text-[#00ffff] leading-none">{status?.points || 0}</div>
                     </div>
 
+                    {/* Time Box */}
                     {expiresAt && (
-                        <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border mr-8">
-                            <div className="text-xs text-cyber-muted font-mono mb-1">TIME REMAINING</div>
-                            <Countdown expiresAt={expiresAt} />
+                        <div className="flex flex-col items-center justify-center px-6 md:px-10 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_15px_rgba(0,255,255,0.3)] z-10 scale-[1.05]">
+                            <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-2 font-bold">TIME REMAINING</div>
+                            <div className="text-3xl md:text-5xl font-digital text-[#00ffff] leading-none drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]">
+                                <Countdown expiresAt={expiresAt} className="text-[#00ffff]" />
+                            </div>
                         </div>
                     )}
 
+                    {/* Disconnect Box */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="px-6 py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all font-mono font-bold rounded"
+                        className="flex items-center justify-center px-4 md:px-8 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 text-[#00ffff] hover:bg-[#00ffff]/10 hover:shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-all font-orbitron font-bold uppercase tracking-widest md:text-lg shadow-[0_0_10px_rgba(0,255,255,0.2)]"
                     >
                         DISCONNECT
                     </button>

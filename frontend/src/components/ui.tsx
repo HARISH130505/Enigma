@@ -181,7 +181,7 @@ export function Countdown({ expiresAt, onExpire, className = '' }: CountdownProp
     }, [expiresAt, onExpire]);
 
     return (
-        <div className={`countdown ${status} ${className}`}>
+        <div className={`countdown ${status} ${className} tracking-widest`}>
             {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
         </div>
     );

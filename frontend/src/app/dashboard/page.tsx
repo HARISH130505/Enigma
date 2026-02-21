@@ -120,14 +120,14 @@ export default function Dashboard() {
             name: 'THE MISCHIEF TRIATHLON',
             status: getRoundStatus(2),
             evidenceComplete: progress?.rounds.find(r => r.round_number === 2) ? getEvidenceCount(progress.rounds.find(r => r.round_number === 2)!) : 0,
-            evidenceTotal: 3 // 120-Second Shadow + Holy Trinity + Hexa Vault
+            evidenceTotal: 3
         },
         {
             number: 3,
             name: 'THE HEXA VAULT',
             status: getRoundStatus(3),
             evidenceComplete: progress?.rounds.find(r => r.round_number === 3) ? getEvidenceCount(progress.rounds.find(r => r.round_number === 3)!) : 0,
-            evidenceTotal: 1 // Hexa Vault
+            evidenceTotal: 1
         },
     ];
 
@@ -136,41 +136,46 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen p-4 md:p-8">
             {/* Header */}
-            <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-                <div>
-                    <h1 className="text-3xl font-orbitron font-bold text-cyber-cyan">
+            <header className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 p-4 border-b border-cyber-border/20">
+
+                <div className="text-center lg:text-left">
+                    <h1 className="text-3xl font-orbitron font-bold tracking-widest text-cyber-cyan drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">
                         MISSION DASHBOARD
                     </h1>
-                    <p className="text-cyber-muted font-mono text-sm">
-                        Operation: ENIGMA • Classification: TOP SECRET
+                    <p className="text-cyber-muted font-mono text-xs mt-1 uppercase tracking-tighter">
+                        Operation: ENIGMA • <span className="text-red-500/80">Classification: TOP SECRET</span>
                     </p>
                 </div>
 
-                <div className="flex items-center justify-center">
-                    <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border">
-                        <div className="text-xs text-cyber-muted font-mono mb-1">
-                            TOTAL SCORE
+                <div className="flex flex-wrap items-center justify-center lg:justify-end gap-4 w-full lg:w-auto">
+
+                    <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
+                        <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
+                            Total Score
                         </div>
-                        <div className="text-2xl font-orbitron font-bold text-cyber-green">
-                            {totalPoints}
+                        <div className="text-2xl font-orbitron font-bold text-cyber-green leading-none">
+                            {totalPoints.toLocaleString()}
                         </div>
                     </div>
 
                     {progress?.session.expiresAt && (
-                        <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border">
-                            <div className="text-xs text-cyber-muted font-mono mb-1">
-                                TIME REMAINING
+                        <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
+                            <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
+                                Time Remaining
                             </div>
-                            <Countdown expiresAt={progress.session.expiresAt} />
+                            <div className="text-2xl font-orbitron font-bold text-cyber-cyan leading-none">
+                                <Countdown expiresAt={progress.session.expiresAt} />
+                            </div>
                         </div>
                     )}
 
                     <button
                         onClick={handleLogout}
-                        className="px-6 py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all font-mono font-bold rounded"
+                        className="btn-neon h-full px-6 py-3 font-orbitron text-sm transition-all"
                     >
                         DISCONNECT
                     </button>
+
                 </div>
             </header>
 
