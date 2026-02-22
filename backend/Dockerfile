@@ -14,8 +14,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install ALL dependencies (including devDependencies required for build, ignoring NODE_ENV locally)
+RUN npm install --include=dev
 
 # Copy source code
 COPY . .
