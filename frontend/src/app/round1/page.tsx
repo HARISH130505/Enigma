@@ -220,7 +220,10 @@ function HintButton({ level, onPointsChange }: { level: number; onPointsChange: 
     );
 }
 
-// ───────────────── Level 1: Jigsaw Puzzle ─────────────────
+// ───────────────── Level 1: Jigsaw Puzzle (Self-built) ─────────────────
+
+const GRID_SIZE = 4; // 4x4 = 16 tiles
+const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
 
 function JigsawPuzzle({
     onComplete,
@@ -231,10 +234,87 @@ function JigsawPuzzle({
     disabled: boolean;
     onPointsChange: () => void;
 }) {
+    // Each tile is identified by its correct position index (0-15)
+    // grid[i] = which tile is placed at position i (null if empty)
+    const [grid, setGrid] = useState<(number | null)[]>(Array(TOTAL_TILES).fill(null));
+    // pool = tiles not yet placed
+    const [pool, setPool] = useState<number[]>(() => {
+        const tiles = Array.from({ length: TOTAL_TILES }, (_, i) => i);
+        // Fisher-Yates shuffle
+        for (let i = tiles.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+        }
+        return tiles;
+    });
+    const [draggedTile, setDraggedTile] = useState<number | null>(null);
+    const [dragSource, setDragSource] = useState<'pool' | number | null>(null);
+    const [solved, setSolved] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const handleComplete = async () => {
+    const tileSize = 100 / GRID_SIZE;
+
+    // Check if puzzle is solved
+    const checkSolved = (currentGrid: (number | null)[]) => {
+        return currentGrid.every((tile, idx) => tile === idx);
+    };
+
+    const handleDragStart = (tileId: number, source: 'pool' | number) => {
+        setDraggedTile(tileId);
+        setDragSource(source);
+    };
+
+    const handleDropOnGrid = (targetIdx: number) => {
+        if (draggedTile === null) return;
+
+        const newGrid = [...grid];
+        const newPool = [...pool];
+
+        // If target cell already has a tile, swap or send back to pool
+        const existingTile = newGrid[targetIdx];
+
+        if (dragSource === 'pool') {
+            // From pool → grid
+            newPool.splice(newPool.indexOf(draggedTile), 1);
+            if (existingTile !== null) {
+                newPool.push(existingTile);
+            }
+            newGrid[targetIdx] = draggedTile;
+        } else if (typeof dragSource === 'number') {
+            // From grid → grid (swap)
+            newGrid[dragSource as number] = existingTile;
+            newGrid[targetIdx] = draggedTile;
+        }
+
+        setGrid(newGrid);
+        setPool(newPool);
+        setDraggedTile(null);
+        setDragSource(null);
+
+        // Check win
+        if (checkSolved(newGrid)) {
+            setSolved(true);
+        }
+    };
+
+    const handleDropOnPool = () => {
+        if (draggedTile === null || dragSource === 'pool') {
+            setDraggedTile(null);
+            setDragSource(null);
+            return;
+        }
+        // From grid → pool
+        const newGrid = [...grid];
+        newGrid[dragSource as number] = null;
+        setGrid(newGrid);
+        setPool([...pool, draggedTile]);
+        setDraggedTile(null);
+        setDragSource(null);
+    };
+
+    const handleSubmit = async () => {
+        if (!solved) return;
         setSubmitting(true);
         setMessage(null);
         try {
@@ -253,6 +333,24 @@ function JigsawPuzzle({
         }
     };
 
+    // Render a tile showing its portion of the map image
+    const renderTile = (tileId: number, size: number) => {
+        const row = Math.floor(tileId / GRID_SIZE);
+        const col = tileId % GRID_SIZE;
+        return (
+            <div
+                style={{
+                    width: size,
+                    height: size,
+                    backgroundImage: 'url(/war_map.png)',
+                    backgroundSize: `${GRID_SIZE * size}px ${GRID_SIZE * size}px`,
+                    backgroundPosition: `-${col * size}px -${row * size}px`,
+                    borderRadius: '2px',
+                }}
+            />
+        );
+    };
+
     if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
@@ -262,27 +360,90 @@ function JigsawPuzzle({
         );
     }
 
+    const cellSize = 80; // px per cell
+
     return (
         <div className="space-y-4">
             <StorylineDisplay level={1} />
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
                 <p className="text-cyber-muted text-sm font-mono mb-4">
-                    Reconstruct the torn map fragment. Complete the jigsaw puzzle below to reveal the compromised location.
+                    Drag tiles from the pool below into the grid to reconstruct the torn map fragment.
                 </p>
 
-                {/* Jigsaw iframe */}
-                <div className="relative w-full rounded overflow-hidden border border-cyber-border" style={{ height: '500px' }}>
-                    <iframe
-                        src="https://puzzel.org/en/jigsaw/play?p=-OmDvPAFTJeNTOz155DB"
-                        className="w-full h-full border-0"
-                        title="Map Fragment Jigsaw Puzzle"
-                        allow="fullscreen"
-                    />
+                {/* Puzzle Grid */}
+                <div className="flex justify-center mb-4">
+                    <div
+                        className="grid border border-cyber-cyan/30 bg-cyber-darker rounded"
+                        style={{
+                            gridTemplateColumns: `repeat(${GRID_SIZE}, ${cellSize}px)`,
+                            gridTemplateRows: `repeat(${GRID_SIZE}, ${cellSize}px)`,
+                            gap: '2px',
+                            padding: '4px',
+                        }}
+                    >
+                        {grid.map((tileId, idx) => (
+                            <div
+                                key={idx}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => handleDropOnGrid(idx)}
+                                className={`
+                                    flex items-center justify-center border rounded cursor-pointer
+                                    transition-all duration-150
+                                    ${tileId !== null
+                                        ? (tileId === idx ? 'border-cyber-green/50' : 'border-cyber-cyan/30')
+                                        : 'border-dashed border-cyber-border/50 bg-cyber-darker/50'}
+                                `}
+                                style={{ width: cellSize, height: cellSize }}
+                            >
+                                {tileId !== null ? (
+                                    <div
+                                        draggable
+                                        onDragStart={() => handleDragStart(tileId, idx)}
+                                        className="cursor-grab active:cursor-grabbing"
+                                    >
+                                        {renderTile(tileId, cellSize - 4)}
+                                    </div>
+                                ) : (
+                                    <span className="text-cyber-border/30 text-xs font-mono">{idx + 1}</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                <p className="text-cyber-orange text-xs font-mono mt-3 text-center">
-                    ⚠ Complete the puzzle above, then confirm below to proceed.
-                </p>
+                {/* Tile Pool */}
+                <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDropOnPool}
+                    className={`
+                        min-h-24 flex flex-wrap gap-2 items-center justify-center p-4
+                        border-2 border-dashed rounded transition-colors
+                        ${pool.length === 0 ? 'border-cyber-green/30' : 'border-cyber-orange/30'}
+                    `}
+                >
+                    {pool.length === 0 ? (
+                        <span className="text-cyber-green text-sm font-mono">
+                            {solved ? '✓ ALL TILES PLACED CORRECTLY!' : 'All tiles placed. Check the arrangement.'}
+                        </span>
+                    ) : (
+                        pool.map((tileId) => (
+                            <div
+                                key={tileId}
+                                draggable
+                                onDragStart={() => handleDragStart(tileId, 'pool')}
+                                className="cursor-grab active:cursor-grabbing border border-cyber-cyan/20 rounded hover:border-cyber-cyan/60 transition-colors"
+                            >
+                                {renderTile(tileId, cellSize - 8)}
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {solved && (
+                    <p className="text-cyber-green text-sm font-mono mt-3 text-center animate-pulse">
+                        🎯 MAP FRAGMENT RECONSTRUCTED — Confirm submission below.
+                    </p>
+                )}
             </div>
 
             {message && (
@@ -296,11 +457,11 @@ function JigsawPuzzle({
 
             <div className="flex items-center gap-3">
                 <button
-                    onClick={handleComplete}
-                    disabled={submitting}
+                    onClick={handleSubmit}
+                    disabled={!solved || submitting}
                     className="btn-neon flex-1"
                 >
-                    {submitting ? 'VERIFYING...' : '✓ I HAVE COMPLETED THE PUZZLE'}
+                    {submitting ? 'VERIFYING...' : solved ? '✓ SUBMIT RECONSTRUCTED MAP' : 'COMPLETE THE PUZZLE FIRST'}
                 </button>
                 <HintButton level={1} onPointsChange={onPointsChange} />
             </div>
