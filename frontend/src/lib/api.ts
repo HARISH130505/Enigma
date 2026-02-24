@@ -118,39 +118,45 @@ class ApiClient {
         return this.request('/game/briefing');
     }
 
-    // Round 1 endpoints
-    async submitEvidence1(order: string[]) {
+    // Round 1 endpoints – Attack on BlackRidge Airfield
+    async submitEvidence1(completed: boolean) {
         return this.request('/round1/evidence/1', {
+            method: 'POST',
+            body: JSON.stringify({ completed }),
+        });
+    }
+
+    async submitEvidence2(order: string[]) {
+        return this.request('/round1/evidence/2', {
             method: 'POST',
             body: JSON.stringify({ order }),
         });
     }
 
-    async submitEvidence2(selectedNode: string) {
-        return this.request('/round1/evidence/2', {
-            method: 'POST',
-            body: JSON.stringify({ selectedNode }),
-        });
-    }
-
-    async submitEvidence3(reason: string) {
+    async submitEvidence3(answer: string) {
         return this.request('/round1/evidence/3', {
             method: 'POST',
-            body: JSON.stringify({ reason }),
+            body: JSON.stringify({ answer }),
         });
     }
 
-    async submitEvidence4(choice: string) {
+    async submitEvidence4(answer: string) {
         return this.request('/round1/evidence/4', {
             method: 'POST',
-            body: JSON.stringify({ choice }),
+            body: JSON.stringify({ answer }),
         });
     }
 
-    async submitEscapeCode(code: string) {
-        return this.request('/round1/escape-code', {
+    async submitEvidence5(regiment: string, traitorId: string) {
+        return this.request('/round1/evidence/5', {
             method: 'POST',
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ regiment, traitorId }),
+        });
+    }
+
+    async requestHint(level: number) {
+        return this.request(`/round1/hint/${level}`, {
+            method: 'POST',
         });
     }
 

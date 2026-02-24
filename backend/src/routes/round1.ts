@@ -5,13 +5,29 @@ import { authenticateTeam, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// Correct answers (from environment)
+// ──────────────────────────────────────────────────────────
+// Round 1 – Attack on BlackRidge Airfield
+// ──────────────────────────────────────────────────────────
+
+// Correct answers
 const CORRECT_ANSWERS = {
-    systemFlow: (process.env.R1_SYSTEM_FLOW_ORDER || 'biometric,cctv,server,db,monitoring').split(','),
-    failurePoint: process.env.R1_FAILURE_POINT || 'server',
-    corruptedCause: process.env.R1_CORRUPTED_CAUSE || 'datetime',
-    rootCause: process.env.R1_ROOT_CAUSE || 'manual-mode',
-    escapeCode: process.env.R1_ESCAPE_CODE || 'CDM'
+    // Level 2: Bunker sequence (drag-and-drop ordering)
+    bunkerSequence: ['barracks', 'armory', 'control-room', 'radar-unit', 'signal-room', 'war-archive', 'escape-tunnel'],
+    // Level 3: Caesar cipher decryption (shift-3)
+    cipherAnswer: 'bombing has been planned on black ridge airfield',
+    // Level 4: Binary decoding
+    binaryAnswer: '7359',
+    // Level 5 Q1: Regiment identification (MCQ)
+    regiment: 'communication field',
+    // Level 5 Q2: Traitor's ID
+    traitorId: 'CF-8735962',
+};
+
+// Points constants
+const POINTS = {
+    CORRECT: 25,
+    WRONG_PENALTY: 10,
+    HINT_PENALTY: 15,
 };
 
 // Helper to log attempt
@@ -27,279 +43,248 @@ async function logAttempt(sessionId: string, roundNumber: number, evidenceNumber
     });
 }
 
-// Evidence 1: System Flow (drag-and-drop ordering)
+// Helper to award points
+async function awardPoints(sessionId: string, pointsToAdd: number) {
+    const { data: currentProgress } = await supabase
+        .from('round_progress')
+        .select('points')
+        .eq('session_id', sessionId)
+        .eq('round_number', 1)
+        .single();
+    const newPoints = (currentProgress?.points || 0) + pointsToAdd;
+    await supabase
+        .from('round_progress')
+        .update({ points: newPoints })
+        .eq('session_id', sessionId)
+        .eq('round_number', 1);
+    return newPoints;
+}
+
+// Helper to deduct points
+async function deductPoints(sessionId: string, pointsToDeduct: number) {
+    const { data: currentProgress } = await supabase
+        .from('round_progress')
+        .select('points')
+        .eq('session_id', sessionId)
+        .eq('round_number', 1)
+        .single();
+    const newPoints = Math.max(0, (currentProgress?.points || 0) - pointsToDeduct);
+    await supabase
+        .from('round_progress')
+        .update({ points: newPoints })
+        .eq('session_id', sessionId)
+        .eq('round_number', 1);
+    return newPoints;
+}
+
+// ──────────────────── Level 1: Jigsaw Puzzle ────────────────────
 router.post('/evidence/1', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
-        const { order } = req.body; // Array of strings
-        console.log(`[Evidence 1] Session ${req.sessionId} submitted order:`, order);
+        const { completed } = req.body; // boolean – self-reported completion
+        console.log(`[Level 1] Session ${req.sessionId} jigsaw completed: ${completed}`);
 
-        if (!Array.isArray(order) || order.length !== 5) {
+        if (typeof completed !== 'boolean') {
             return res.status(400).json({ error: 'Invalid submission format.' });
         }
 
-        const isCorrect = JSON.stringify(order) === JSON.stringify(CORRECT_ANSWERS.systemFlow);
-        console.log(`[Evidence 1] Correct: ${isCorrect}`);
+        await logAttempt(req.sessionId!, 1, 1, { completed }, completed);
 
-        await logAttempt(req.sessionId!, 1, 1, { order }, isCorrect);
-
-        if (isCorrect) {
-            // Get current points
-            const { data: currentProgress } = await supabase
-                .from('round_progress')
-                .select('points')
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 1)
-                .single();
-
-            const newPoints = (currentProgress?.points || 0) + 20;
-
-            // Update evidence completion and points in single query
-            const updateResult = await supabase
-                .from('round_progress')
-                .update({
-                    evidence_1_complete: true,
-                    points: newPoints
-                })
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 1);
-
-            console.log(`[Evidence 1] Database update result:`, updateResult);
-            console.log(`[Evidence 1] Updated database - evidence_1_complete: true, points: ${newPoints}`);
-
-            res.json({
-                success: true,
-                message: 'SYSTEM FLOW VERIFIED. Operational sequence confirmed. (+20 Points)',
-                accessGranted: true,
-                pointsEarned: 20
-            });
-        } else {
-            res.json({
-                success: false,
-                message: 'FLOW MISMATCH. Re-analyze component sequence. (No penalty for Level 1)',
-                accessGranted: false
-            });
-        }
-    } catch (error) {
-        console.error('Evidence 1 error:', error);
-        res.status(500).json({ error: 'Validation failed.' });
-    }
-});
-
-// Evidence 2: Failure Point (selection)
-router.post('/evidence/2', authenticateTeam, async (req: AuthRequest, res: Response) => {
-    try {
-        const { selectedNode } = req.body;
-
-        if (!selectedNode) {
-            return res.status(400).json({ error: 'No node selected.' });
-        }
-
-        const isCorrect = selectedNode === CORRECT_ANSWERS.failurePoint;
-
-        await logAttempt(req.sessionId!, 1, 2, { selectedNode }, isCorrect);
-
-        if (isCorrect) {
-            const { data: currentProgress } = await supabase.from('round_progress').select('points').eq('session_id', req.sessionId).eq('round_number', 1).single();
-            const newPoints = (currentProgress?.points || 0) + 30;
-
-            const updateResult = await supabase
-                .from('round_progress')
-                .update({
-                    evidence_2_complete: true,
-                    points: newPoints
-                } as any)
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 1);
-
-            console.log(`[Evidence 2] Database update result:`, updateResult);
-            console.log(`[Evidence 2] Updated - evidence_2_complete: true, points: ${newPoints}`);
-
-            res.json({
-                success: true,
-                message: 'FAILURE POINT CONFIRMED. Control Server identified. (+30 Points)',
-                accessGranted: true,
-                pointsEarned: 30
-            });
-        } else {
-            const { data: currentProgress } = await supabase.from('round_progress').select('points').eq('session_id', req.sessionId).eq('round_number', 1).single();
-            const newPoints = Math.max(0, (currentProgress?.points || 0) - 10);
-            await supabase.from('round_progress').update({ points: newPoints }).eq('session_id', req.sessionId).eq('round_number', 1);
-
-            res.json({
-                success: false,
-                message: 'INCORRECT LOCATION. Analysis does not match incident data. (-10 Points)',
-                accessGranted: false,
-                pointsDeducted: 10
-            });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Validation failed.' });
-    }
-});
-
-// Evidence 3: Corrupted Evidence (Reason Multiple Choice)
-router.post('/evidence/3', authenticateTeam, async (req: AuthRequest, res: Response) => {
-    try {
-        const { reason } = req.body;
-
-        if (!reason) {
-            return res.status(400).json({ error: 'No reason provided.' });
-        }
-
-        const isCorrect = reason === CORRECT_ANSWERS.corruptedCause;
-
-        await logAttempt(req.sessionId!, 1, 3, { reason }, isCorrect);
-
-        if (isCorrect) {
-            const { data: currentProgress } = await supabase.from('round_progress').select('points').eq('session_id', req.sessionId).eq('round_number', 1).single();
-            const newPoints = (currentProgress?.points || 0) + 30;
-
-            const updateResult = await supabase
-                .from('round_progress')
-                .update({
-                    evidence_3_complete: true,
-                    points: newPoints
-                } as any)
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 1);
-
-            console.log(`[Evidence 3] Database update result:`, updateResult);
-            console.log(`[Evidence 3] Updated - evidence_3_complete: true, points: ${newPoints}`);
-
-            res.json({
-                success: true,
-                message: 'CORRUPTION SOURCE IDENTIFIED. Timestamps realigned. (+30 Points)',
-                accessGranted: true,
-                pointsEarned: 30
-            });
-        } else {
-            const { data: currentProgress } = await supabase.from('round_progress').select('points').eq('session_id', req.sessionId).eq('round_number', 1).single();
-            const newPoints = Math.max(0, (currentProgress?.points || 0) - 10);
-            await supabase.from('round_progress').update({ points: newPoints }).eq('session_id', req.sessionId).eq('round_number', 1);
-
-            res.json({
-                success: false,
-                message: 'INCORRECT ANALYSIS. That does not explain the logs. (-10 Points)',
-                accessGranted: false,
-                pointsDeducted: 10
-            });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Validation failed.' });
-    }
-});
-
-// Evidence 4: Root Cause (Human Error)
-router.post('/evidence/4', authenticateTeam, async (req: AuthRequest, res: Response) => {
-    try {
-        const { choice } = req.body;
-        console.log(`[Evidence 4] Session ${req.sessionId} submitted choice:`, choice);
-
-        if (!choice) {
-            return res.status(400).json({ error: 'Invalid choice.' });
-        }
-
-        const isCorrect = choice === CORRECT_ANSWERS.rootCause;
-        console.log(`[Evidence 4] Correct: ${isCorrect}, Expected: ${CORRECT_ANSWERS.rootCause}`);
-
-        await logAttempt(req.sessionId!, 1, 4, { choice }, isCorrect);
-
-        if (isCorrect) {
-            const { data: currentProgress } = await supabase.from('round_progress').select('points').eq('session_id', req.sessionId).eq('round_number', 1).single();
-            const newPoints = (currentProgress?.points || 0) + 30;
-
-            const updateResult = await supabase
-                .from('round_progress')
-                .update({
-                    evidence_4_complete: true,
-                    points: newPoints
-                } as any)
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 1);
-
-            console.log(`[Evidence 4] Database update result:`, updateResult);
-            console.log(`[Evidence 4] Updated - evidence_4_complete: true, points: ${newPoints}`);
-
-            // Check if escape code should be unlocked
-            const { data: progress } = await supabase
-                .from('round_progress')
-                .select('*')
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 1)
-                .single();
-
-            console.log(`[Evidence 4] Current progress after update:`, progress);
-
-            const escapeUnlocked = progress?.evidence_2_complete &&
-                progress?.evidence_3_complete &&
-                progress?.evidence_4_complete;
-
-            console.log(`[Evidence 4] Escape unlock check - E2: ${progress?.evidence_2_complete}, E3: ${progress?.evidence_3_complete}, E4: ${progress?.evidence_4_complete}, Unlocked: ${escapeUnlocked}`);
-
-            if (escapeUnlocked) {
-                await supabase
-                    .from('round_progress')
-                    .update({ escape_code_unlocked: true })
-                    .eq('session_id', req.sessionId)
-                    .eq('round_number', 1);
-                console.log(`[Evidence 4] Escape code unlocked`);
-            }
-
-            res.json({
-                success: true,
-                message: 'ROOT CAUSE CONFIRMED. The truth emerges. (+30 Points)',
-                accessGranted: true,
-                escapeCodeUnlocked: escapeUnlocked,
-                pointsEarned: 30
-            });
-        } else {
-            const { data: currentProgress } = await supabase.from('round_progress').select('points').eq('session_id', req.sessionId).eq('round_number', 1).single();
-            const newPoints = Math.max(0, (currentProgress?.points || 0) - 10);
-            await supabase.from('round_progress').update({ points: newPoints }).eq('session_id', req.sessionId).eq('round_number', 1);
-
-            res.json({
-                success: false,
-                message: 'ANALYSIS INCONCLUSIVE. Re-examine the evidence. (-10 Points)',
-                accessGranted: false,
-                pointsDeducted: 10
-            });
-        }
-    } catch (error) {
-        console.error('Evidence 4 error:', error);
-        res.status(500).json({ error: 'Validation failed.' });
-    }
-});
-
-// Escape Code validation
-router.post('/escape-code', authenticateTeam, async (req: AuthRequest, res: Response) => {
-    try {
-        const { code } = req.body;
-
-        // Check if escape code is unlocked
-        const { data: progress } = await supabase
-            .from('round_progress')
-            .select('escape_code_unlocked')
-            .eq('session_id', req.sessionId)
-            .eq('round_number', 1)
-            .single();
-
-        if (!progress?.escape_code_unlocked) {
-            return res.status(403).json({
-                error: 'ESCAPE CODE LOCKED. Complete required evidence first.'
-            });
-        }
-
-        const isCorrect = code?.toUpperCase() === CORRECT_ANSWERS.escapeCode;
-
-        await logAttempt(req.sessionId!, 1, 5, { code }, isCorrect);
-
-        if (isCorrect) {
-            // Mark round 1 complete
+        if (completed) {
             await supabase
                 .from('round_progress')
-                .update({ completed_at: new Date().toISOString() })
+                .update({ evidence_1_complete: true } as any)
                 .eq('session_id', req.sessionId)
                 .eq('round_number', 1);
+
+            const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+
+            res.json({
+                success: true,
+                message: 'MAP FRAGMENT RECONSTRUCTED. Strike coordinates partially recovered. (+25 Points)',
+                accessGranted: true,
+                pointsEarned: POINTS.CORRECT,
+                totalPoints: newPoints,
+            });
+        } else {
+            res.json({
+                success: false,
+                message: 'The map fragment has not been fully assembled. Keep trying.',
+                accessGranted: false,
+            });
+        }
+    } catch (error) {
+        console.error('Level 1 error:', error);
+        res.status(500).json({ error: 'Validation failed.' });
+    }
+});
+
+// ──────────────────── Level 2: Bunker Sequence ────────────────────
+router.post('/evidence/2', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        const { order } = req.body; // Array of strings
+        console.log(`[Level 2] Session ${req.sessionId} submitted order:`, order);
+
+        if (!Array.isArray(order) || order.length !== 7) {
+            return res.status(400).json({ error: 'Invalid submission format. Expected 7 items.' });
+        }
+
+        const isCorrect = JSON.stringify(order) === JSON.stringify(CORRECT_ANSWERS.bunkerSequence);
+        console.log(`[Level 2] Correct: ${isCorrect}`);
+
+        await logAttempt(req.sessionId!, 1, 2, { order }, isCorrect);
+
+        if (isCorrect) {
+            await supabase
+                .from('round_progress')
+                .update({ evidence_2_complete: true } as any)
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 1);
+
+            const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+
+            res.json({
+                success: true,
+                message: 'BUNKER ROUTE CONFIRMED. Internal progression verified. (+25 Points)',
+                accessGranted: true,
+                pointsEarned: POINTS.CORRECT,
+                totalPoints: newPoints,
+            });
+        } else {
+            const newPoints = await deductPoints(req.sessionId!, POINTS.WRONG_PENALTY);
+            res.json({
+                success: false,
+                message: 'SEQUENCE MISMATCH. The bunker route does not follow standard progression. (-10 Points)',
+                accessGranted: false,
+                pointsDeducted: POINTS.WRONG_PENALTY,
+                totalPoints: newPoints,
+            });
+        }
+    } catch (error) {
+        console.error('Level 2 error:', error);
+        res.status(500).json({ error: 'Validation failed.' });
+    }
+});
+
+// ──────────────────── Level 3: Caesar Cipher Decryption ────────────────────
+router.post('/evidence/3', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        const { answer } = req.body;
+
+        if (!answer || typeof answer !== 'string') {
+            return res.status(400).json({ error: 'No answer provided.' });
+        }
+
+        const isCorrect = answer.trim().toLowerCase() === CORRECT_ANSWERS.cipherAnswer;
+
+        await logAttempt(req.sessionId!, 1, 3, { answer }, isCorrect);
+
+        if (isCorrect) {
+            await supabase
+                .from('round_progress')
+                .update({ evidence_3_complete: true } as any)
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 1);
+
+            const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+
+            res.json({
+                success: true,
+                message: 'TRANSMISSION DECRYPTED. Contents of the leaked message confirmed. (+25 Points)',
+                accessGranted: true,
+                pointsEarned: POINTS.CORRECT,
+                totalPoints: newPoints,
+            });
+        } else {
+            const newPoints = await deductPoints(req.sessionId!, POINTS.WRONG_PENALTY);
+            res.json({
+                success: false,
+                message: 'DECRYPTION FAILED. The decoded message does not match expected format. (-10 Points)',
+                accessGranted: false,
+                pointsDeducted: POINTS.WRONG_PENALTY,
+                totalPoints: newPoints,
+            });
+        }
+    } catch (error) {
+        console.error('Level 3 error:', error);
+        res.status(500).json({ error: 'Validation failed.' });
+    }
+});
+
+// ──────────────────── Level 4: Binary Decoding ────────────────────
+router.post('/evidence/4', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        const { answer } = req.body;
+        console.log(`[Level 4] Session ${req.sessionId} submitted:`, answer);
+
+        if (!answer || typeof answer !== 'string') {
+            return res.status(400).json({ error: 'No answer provided.' });
+        }
+
+        const isCorrect = answer.trim() === CORRECT_ANSWERS.binaryAnswer;
+        console.log(`[Level 4] Correct: ${isCorrect}`);
+
+        await logAttempt(req.sessionId!, 1, 4, { answer }, isCorrect);
+
+        if (isCorrect) {
+            await supabase
+                .from('round_progress')
+                .update({ evidence_4_complete: true } as any)
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 1);
+
+            const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+
+            res.json({
+                success: true,
+                message: 'BINARY FRAGMENT DECODED. Authentication code fragment recovered. (+25 Points)',
+                accessGranted: true,
+                pointsEarned: POINTS.CORRECT,
+                totalPoints: newPoints,
+            });
+        } else {
+            const newPoints = await deductPoints(req.sessionId!, POINTS.WRONG_PENALTY);
+            res.json({
+                success: false,
+                message: 'DECODE ERROR. The binary imprint does not resolve to a valid code. (-10 Points)',
+                accessGranted: false,
+                pointsDeducted: POINTS.WRONG_PENALTY,
+                totalPoints: newPoints,
+            });
+        }
+    } catch (error) {
+        console.error('Level 4 error:', error);
+        res.status(500).json({ error: 'Validation failed.' });
+    }
+});
+
+// ──────────────────── Level 5: Traitor Identification (Two-Part) ────────────────────
+router.post('/evidence/5', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        const { regiment, traitorId } = req.body;
+        console.log(`[Level 5] Session ${req.sessionId} submitted regiment: "${regiment}", traitorId: "${traitorId}"`);
+
+        if (!regiment || !traitorId) {
+            return res.status(400).json({ error: 'Both regiment and traitor ID are required.' });
+        }
+
+        const regimentCorrect = regiment.trim().toLowerCase() === CORRECT_ANSWERS.regiment;
+        const idCorrect = traitorId.trim().toUpperCase() === CORRECT_ANSWERS.traitorId;
+        const isCorrect = regimentCorrect && idCorrect;
+
+        await logAttempt(req.sessionId!, 1, 5, { regiment, traitorId }, isCorrect);
+
+        if (isCorrect) {
+            // Mark evidence 5 complete
+            await supabase
+                .from('round_progress')
+                .update({
+                    evidence_5_complete: true,
+                    completed_at: new Date().toISOString(),
+                } as any)
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 1);
+
+            const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
 
             // Unlock round 2 and reset timer to 60 minutes
             const newExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
@@ -310,23 +295,73 @@ router.post('/escape-code', authenticateTeam, async (req: AuthRequest, res: Resp
 
             res.json({
                 success: true,
-                message: 'ESCAPE CODE ACCEPTED. Round 1 Complete. Proceeding to Data Leak Investigation.',
+                message: 'TRAITOR IDENTIFIED. Investigation complete. Round 1 cleared. (+25 Points)',
+                accessGranted: true,
                 roundComplete: true,
-                nextRound: 2
+                nextRound: 2,
+                pointsEarned: POINTS.CORRECT,
+                totalPoints: newPoints,
             });
         } else {
+            const newPoints = await deductPoints(req.sessionId!, POINTS.WRONG_PENALTY);
+
+            let feedback = '';
+            if (!regimentCorrect && !idCorrect) {
+                feedback = 'IDENTIFICATION FAILED. Both the regiment and ID are incorrect. An innocent officer may pay the price. (-10 Points)';
+            } else if (!regimentCorrect) {
+                feedback = 'REGIMENT MISMATCH. The identified regiment does not match the evidence. (-10 Points)';
+            } else {
+                feedback = 'ID MISMATCH. The traitor ID does not match any officer in the identified regiment. (-10 Points)';
+            }
+
             res.json({
                 success: false,
-                message: 'INVALID ESCAPE CODE. Access denied.',
-                roundComplete: false
+                message: feedback,
+                accessGranted: false,
+                pointsDeducted: POINTS.WRONG_PENALTY,
+                totalPoints: newPoints,
             });
         }
     } catch (error) {
+        console.error('Level 5 error:', error);
         res.status(500).json({ error: 'Validation failed.' });
     }
 });
 
-// Get Round 1 status
+// ──────────────────── Hint Request ────────────────────
+router.post('/hint/:level', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        const level = parseInt(req.params.level);
+        if (isNaN(level) || level < 1 || level > 5) {
+            return res.status(400).json({ error: 'Invalid level.' });
+        }
+
+        const newPoints = await deductPoints(req.sessionId!, POINTS.HINT_PENALTY);
+
+        const hints: Record<number, string> = {
+            1: 'Piece the torn map back together. Look for edge pieces and matching patterns.',
+            2: 'An officer enters through the Entry Gate first. Equipment is checked before operations. Surveillance before signals. The exit is always last.',
+            3: 'This is a simple letter-shift cipher. Try shifting each letter back by 3 positions in the alphabet. A becomes X, B becomes Y, etc.',
+            4: 'Convert the binary string to decimal. Split the binary sequence into meaningful groups.',
+            5: 'Think about who had access to the Signal Chamber. The information was shared with specific groups – which group includes communication capabilities?',
+        };
+
+        await logAttempt(req.sessionId!, 1, level, { hintRequested: true }, false);
+
+        res.json({
+            success: true,
+            hint: hints[level],
+            pointsDeducted: POINTS.HINT_PENALTY,
+            totalPoints: newPoints,
+            message: `Hint revealed. (-${POINTS.HINT_PENALTY} Points)`,
+        });
+    } catch (error) {
+        console.error('Hint error:', error);
+        res.status(500).json({ error: 'Failed to retrieve hint.' });
+    }
+});
+
+// ──────────────────── Get Round 1 Status ────────────────────
 router.get('/status', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
         console.log(`[Status] Fetching status for session ${req.sessionId}`);
@@ -348,9 +383,9 @@ router.get('/status', authenticateTeam, async (req: AuthRequest, res: Response) 
             evidence2: progress?.evidence_2_complete || false,
             evidence3: progress?.evidence_3_complete || false,
             evidence4: progress?.evidence_4_complete || false,
-            escapeCodeUnlocked: progress?.escape_code_unlocked || false,
+            evidence5: progress?.evidence_5_complete || false,
             points: progress?.points || 0,
-            completed: !!progress?.completed_at
+            completed: !!progress?.completed_at,
         };
 
         console.log(`[Status] Sending response:`, statusResponse);

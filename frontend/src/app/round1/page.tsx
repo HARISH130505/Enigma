@@ -5,31 +5,339 @@ import { useRouter } from 'next/navigation';
 import { Terminal, Countdown, AccessMessage } from '@/components/ui';
 import api from '@/lib/api';
 
+// ─────────────────────────────────────────────────────────────
+// Round 1 – Attack on BlackRidge Airfield
+// ─────────────────────────────────────────────────────────────
+
 interface RoundStatus {
     evidence1: boolean;
     evidence2: boolean;
     evidence3: boolean;
     evidence4: boolean;
-    escapeCodeUnlocked: boolean;
+    evidence5: boolean;
     points: number;
     completed: boolean;
 }
 
-// Drag and Drop System Flow Component
-function SystemFlowPuzzle({
+// ───────────────── Storyline Data ─────────────────
+
+const STORYLINES: Record<number, { title: string; text: string }> = {
+    1: {
+        title: 'War Briefing – Classified',
+        text: `Year: 1943. Eastern Front.
+
+For weeks, our division has studied an enemy-controlled airfield believed to dominate the skies over this region. Destroying it would shift the balance of the war.
+
+At 0300 hours, High Command approved a covert AirStrike. The strike coordinates, deployment timings, and confirmation protocol were secured inside our underground command bunker.
+
+Inside this bunker, movement is never random. Every officer entering through the reinforced Entry Gate must pass through internal clearance before advancing deeper. Equipment authorization is verified before operational review. Surveillance confirmation is completed before any signal is transmitted. And beyond the transmission chamber lies only a final emergency exit — a path no one reaches without passing through every prior section.
+
+The bunker's architecture itself enforces order. No chamber can be accessed out of progression. No transmission can originate without prior clearance. And no officer can reach the final corridor without passing through the command and surveillance units first.
+
+Yet at 04:17 hours, a silent alert was triggered.
+
+Internal data breach detected. Unauthorized signal activity logged.
+
+The Signal Chamber registered transmission activity — but the movement logs do not align with standard bunker progression.
+
+Moments later, security recovered a torn fragment of mapping material from the furnace. Burnt at the edges. Partially destroyed.
+
+The markings are incomplete. The location is not immediately identifiable. But command believes this fragment may indicate what information was transmitted to the enemy.
+
+Our AirStrike plan may have been compromised.
+
+The traitor is inside the bunker.
+
+Investigators — your task is to reconstruct what happened inside these walls… and identify the officer responsible.
+
+Security has sealed the bunker. The torn map fragment recovered from the trash box has been handed to you. If this fragment represents the stolen strike location, reconstructing it may reveal what information was leaked to the enemy.
+
+Your investigation begins now.`,
+    },
+    2: {
+        title: 'Command Update – Strike Target Confirmed',
+        text: `The reconstructed map identifies the compromised location.
+
+Black Ridge Airfield.
+
+This confirms the transmission contained our strike objective. Which means the traitor had access to classified operational data.
+
+Now we must determine how they reached the Signal Chamber without detection.
+
+To do that… we must understand how movement inside this bunker actually works.
+
+Inside this bunker, movement is never random. Every officer entering through the reinforced Entry Gate must pass through internal clearance before advancing deeper. Equipment authorization is verified before operational review. Surveillance confirmation is completed before any signal is transmitted. And beyond the transmission chamber lies only a final emergency exit — a path no one reaches without passing through every prior section.
+
+The bunker's architecture itself enforces order. No chamber can be accessed out of progression.
+
+Reconstruct the correct bunker progression route.`,
+    },
+    3: {
+        title: '04:26 Hours – Intercepted Transmission',
+        text: `During a routine frequency sweep, the Signal Division detected a brief outgoing transmission from inside the bunker.
+
+The source was traced to the Signal Chamber.
+
+The message was not sent using official military encryption. Instead, it appears to be encoded using a simple letter-shift cipher — fast, improvised, and meant to avoid immediate detection.
+
+Signal officers managed to intercept the transmission before it fully left range.
+
+High Command believes this message may contain the information the traitor attempted to send about our planned AirStrike.
+
+The contents remain scrambled.
+
+Decrypt the intercepted transmission to determine exactly what was leaked.`,
+    },
+    4: {
+        title: 'Signal Intelligence Log – Restricted',
+        text: `The decrypted transmission has confirmed our worst fear.
+
+The message did not originate from outside. It came from within these walls.
+
+After isolating the transmission trace, signal technicians conducted a deeper sweep of the bunker's communication systems — searching for anything the sender might have left behind.
+
+At first, nothing.
+
+Then… buried in the signal residue… they found it.
+
+A fragment of identification data, embedded inside the transmission header. Not a full code. Just a piece.
+
+But enough to prove one thing: The signal was sent using an authorized officer's credentials.
+
+The fragment is not recorded in readable form. It exists only as a raw binary imprint pulled from the system logs — incomplete, corrupted, but genuine.
+
+If we decode it… we may learn whose access was used to send the message.
+
+Investigators — decode the fragment.`,
+    },
+    5: {
+        title: 'Final Command Directive – Traitor Identification',
+        text: `All available evidence has now been assembled.
+
+You know the compromised strike location. You understand the bunker's internal route. You have the authentication fragment from the transmission. You have reviewed the personnel access logs. You have reconstructed officer movement during the breach window.
+
+Internal Command Notice – Full Breach Reconstruction:
+The decoded fragment has been verified as part of an officer authentication code used during signal transmission. This confirms the breach was not anonymous.
+
+High Command has now released restricted bunker records for investigation. You have been given:
+• The full list of officer identification codes
+• Signal Chamber access authorizations
+• Console authentication logs recorded during the breach window
+
+The AirStrike information was shared first to the Airforce Regiment, then to the Communication Engineers, and 2 Soldiers from the Southern Infantry were present.
+
+Bunker Security Reconstruction – 04:00 to 04:30 Hours:
+The personnel logs have reduced the number of possible suspects. Security has released movement records for all officers present between 04:00 and 04:30 hours.
+
+The breach occurred at 04:17 hours. For the transmission to occur, the sender must have followed the bunker's internal route — or bypassed it.
+
+Only one officer can satisfy every condition. To identify the traitor, you must now determine:
+• Who had authorization to access the Signal Chamber
+• Who could physically reach it following bunker progression
+• Who was present at the correct time
+• Whose identification code matches the recovered fragment
+
+Name the officer responsible for the breach. Be prepared to justify your conclusion to Command.
+
+This investigation ends now.`,
+    },
+};
+
+// ───────────────── Storyline Display Component ─────────────────
+
+function StorylineDisplay({ level }: { level: number }) {
+    const [expanded, setExpanded] = useState(true);
+    const storyline = STORYLINES[level];
+
+    return (
+        <div className="mb-6">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full flex items-center justify-between p-3 bg-cyber-darker rounded border border-cyber-border hover:border-cyber-orange/50 transition-colors"
+            >
+                <div className="flex items-center gap-2">
+                    <span className="text-cyber-orange">📜</span>
+                    <span className="font-orbitron text-sm text-cyber-orange tracking-wider">
+                        {storyline.title}
+                    </span>
+                </div>
+                <span className="text-cyber-muted text-xs">{expanded ? '▲ COLLAPSE' : '▼ EXPAND'}</span>
+            </button>
+            {expanded && (
+                <div className="mt-2 p-4 bg-cyber-darker/50 rounded border border-cyber-border/30 max-h-80 overflow-y-auto">
+                    <div className="text-cyber-text text-sm font-mono leading-relaxed whitespace-pre-line">
+                        {storyline.text}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ───────────────── Hint Button Component ─────────────────
+
+function HintButton({ level, onPointsChange }: { level: number; onPointsChange: () => void }) {
+    const [hint, setHint] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [confirmed, setConfirmed] = useState(false);
+
+    const handleRequestHint = async () => {
+        if (!confirmed) {
+            setConfirmed(true);
+            return;
+        }
+        setLoading(true);
+        try {
+            const response = await api.requestHint(level) as { success: boolean; hint: string };
+            if (response.success) {
+                setHint(response.hint);
+                onPointsChange();
+            }
+        } catch {
+            // ignore
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (hint) {
+        return (
+            <div className="p-3 bg-cyber-orange/10 border border-cyber-orange rounded font-mono text-sm text-cyber-orange">
+                <span className="text-xs text-cyber-muted block mb-1">💡 HINT REVEALED (-15 Points):</span>
+                {hint}
+            </div>
+        );
+    }
+
+    return (
+        <button
+            onClick={handleRequestHint}
+            disabled={loading}
+            className="text-xs font-mono px-3 py-1.5 border border-cyber-orange/50 text-cyber-orange hover:bg-cyber-orange/10 rounded transition-colors"
+        >
+            {loading ? 'LOADING...' : confirmed ? '⚠️ CONFIRM? (-15 PTS)' : '💡 REQUEST HINT'}
+        </button>
+    );
+}
+
+// ───────────────── Level 1: Jigsaw Puzzle ─────────────────
+
+function JigsawPuzzle({
     onComplete,
-    disabled
+    disabled,
+    onPointsChange,
 }: {
     onComplete: () => void;
     disabled: boolean;
+    onPointsChange: () => void;
 }) {
-    const [items, setItems] = useState([
-        { id: 'biometric', label: 'Biometric Sensor', icon: 'fingerprint' },
-        { id: 'cctv', label: 'CCTV Camera', icon: 'videocam' },
-        { id: 'monitoring', label: 'Monitoring Terminal', icon: 'desktop_windows' },
-        { id: 'db', label: 'Access Log DB', icon: 'storage' },
-        { id: 'server', label: 'Control Server', icon: 'dns' },
-    ]);
+    const [submitting, setSubmitting] = useState(false);
+    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    const handleComplete = async () => {
+        setSubmitting(true);
+        setMessage(null);
+        try {
+            const response = await api.submitEvidence1(true) as { success: boolean; message: string; pointsEarned?: number };
+            if (response.success) {
+                setMessage({ type: 'success', text: response.message });
+                onPointsChange();
+                setTimeout(onComplete, 1500);
+            } else {
+                setMessage({ type: 'error', text: response.message });
+            }
+        } catch {
+            setMessage({ type: 'error', text: 'Validation failed. Try again.' });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (disabled) {
+        return (
+            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
+                <div className="text-cyber-green text-lg font-mono mb-2">✓ MAP RECONSTRUCTED</div>
+                <p className="text-cyber-muted text-sm">Strike coordinates recovered from the torn fragment</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <StorylineDisplay level={1} />
+            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
+                <p className="text-cyber-muted text-sm font-mono mb-4">
+                    Reconstruct the torn map fragment. Complete the jigsaw puzzle below to reveal the compromised location.
+                </p>
+
+                {/* Jigsaw iframe */}
+                <div className="relative w-full rounded overflow-hidden border border-cyber-border" style={{ height: '500px' }}>
+                    <iframe
+                        src="https://puzzel.org/en/jigsaw/play?p=-OmDvPAFTJeNTOz155DB"
+                        className="w-full h-full border-0"
+                        title="Map Fragment Jigsaw Puzzle"
+                        allow="fullscreen"
+                    />
+                </div>
+
+                <p className="text-cyber-orange text-xs font-mono mt-3 text-center">
+                    ⚠ Complete the puzzle above, then confirm below to proceed.
+                </p>
+            </div>
+
+            {message && (
+                <div className={`p-3 rounded border ${message.type === 'success'
+                    ? 'bg-cyber-green/10 border-cyber-green text-cyber-green'
+                    : 'bg-cyber-red/10 border-cyber-red text-cyber-red'
+                    } font-mono text-sm`}>
+                    {message.text}
+                </div>
+            )}
+
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={handleComplete}
+                    disabled={submitting}
+                    className="btn-neon flex-1"
+                >
+                    {submitting ? 'VERIFYING...' : '✓ I HAVE COMPLETED THE PUZZLE'}
+                </button>
+                <HintButton level={1} onPointsChange={onPointsChange} />
+            </div>
+        </div>
+    );
+}
+
+// ───────────────── Level 2: Bunker Sequence (Drag & Drop) ─────────────────
+
+function BunkerSequencePuzzle({
+    onComplete,
+    disabled,
+    onPointsChange,
+}: {
+    onComplete: () => void;
+    disabled: boolean;
+    onPointsChange: () => void;
+}) {
+    const allItems = [
+        { id: 'barracks', label: 'Barracks', icon: '🏠' },
+        { id: 'armory', label: 'Armory', icon: '🔫' },
+        { id: 'control-room', label: 'Control Room', icon: '🎛️' },
+        { id: 'radar-unit', label: 'Radar Unit', icon: '📡' },
+        { id: 'signal-room', label: 'Signal Room', icon: '📻' },
+        { id: 'war-archive', label: 'War Archive', icon: '📁' },
+        { id: 'escape-tunnel', label: 'Escape Tunnel', icon: '🚪' },
+    ];
+
+    // Shuffle initially
+    const [items, setItems] = useState(() => {
+        const shuffled = [...allItems];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    });
     const [dropZone, setDropZone] = useState<string[]>([]);
     const [draggedItem, setDraggedItem] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -48,70 +356,63 @@ function SystemFlowPuzzle({
     };
 
     const handleRemove = (id: string) => {
-        const item = [
-            { id: 'biometric', label: 'Biometric Sensor', icon: 'fingerprint' },
-            { id: 'cctv', label: 'CCTV Camera', icon: 'videocam' },
-            { id: 'server', label: 'Control Server', icon: 'dns' },
-            { id: 'db', label: 'Access Log DB', icon: 'storage' },
-            { id: 'monitoring', label: 'Monitoring Terminal', icon: 'desktop_windows' },
-        ].find(i => i.id === id);
-
+        const item = allItems.find(i => i.id === id);
         if (item) {
             setItems([...items, item]);
             setDropZone(dropZone.filter(i => i !== id));
         }
     };
 
+    const getItemLabel = (id: string) => {
+        return allItems.find(i => i.id === id)?.label || id;
+    };
+
+    const getItemIcon = (id: string) => {
+        return allItems.find(i => i.id === id)?.icon || '';
+    };
+
     const handleSubmit = async () => {
-        if (dropZone.length !== 5) return;
+        if (dropZone.length !== 7) return;
         setSubmitting(true);
         setMessage(null);
 
         try {
-            const response = await api.submitEvidence1(dropZone) as { success: boolean; message: string; pointsEarned?: number };
+            const response = await api.submitEvidence2(dropZone) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
-                setMessage({ type: 'success', text: `${response.message} (+${response.pointsEarned} Points)` });
+                setMessage({ type: 'success', text: response.message });
+                onPointsChange();
                 setTimeout(onComplete, 1500);
             } else {
                 setMessage({ type: 'error', text: response.message });
+                onPointsChange();
             }
-        } catch (err) {
+        } catch {
             setMessage({ type: 'error', text: 'Validation failed. Try again.' });
         } finally {
             setSubmitting(false);
         }
     };
 
-    const getItemLabel = (id: string) => {
-        const labels: Record<string, string> = {
-            biometric: 'Entry Biometric Sensor',
-            cctv: 'CCTV Camera',
-            server: 'Control Server',
-            db: 'Access Log Database',
-            monitoring: 'Monitoring Terminal',
-        };
-        return labels[id] || id;
-    };
-
     if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ FLOW RECONSTRUCTED</div>
-                <p className="text-cyber-muted text-sm">System operational sequence verified</p>
+                <div className="text-cyber-green text-lg font-mono mb-2">✓ BUNKER ROUTE CONFIRMED</div>
+                <p className="text-cyber-muted text-sm">Internal progression verified</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            <StorylineDisplay level={2} />
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
                 <p className="text-cyber-muted text-sm font-mono mb-4">
-                    Arrange the components in the correct operational sequence (Source → Destination).
+                    Arrange the bunker chambers in the correct progression order (Entry → Exit).
                 </p>
 
                 {/* Available Items */}
                 <div className="mb-4">
-                    <div className="text-xs text-cyber-muted mb-2">AVAILABLE COMPONENTS:</div>
+                    <div className="text-xs text-cyber-muted mb-2">AVAILABLE CHAMBERS:</div>
                     <div className="flex flex-wrap gap-2">
                         {items.map(item => (
                             <div
@@ -119,16 +420,12 @@ function SystemFlowPuzzle({
                                 draggable
                                 onDragStart={() => handleDragStart(item.id)}
                                 className={`
-                  draggable px-3 py-2 bg-cyber-darker border border-cyber-border rounded
-                  hover:border-cyber-cyan cursor-grab text-sm font-mono flex items-center gap-2
-                  ${draggedItem === item.id ? 'opacity-50' : ''}
-                `}
+                                    draggable px-3 py-2 bg-cyber-darker border border-cyber-border rounded
+                                    hover:border-cyber-cyan cursor-grab text-sm font-mono flex items-center gap-2
+                                    ${draggedItem === item.id ? 'opacity-50' : ''}
+                                `}
                             >
-                                {item.icon === 'fingerprint' && <span className="text-cyber-cyan">👆</span>}
-                                {item.icon === 'videocam' && <span className="text-cyber-cyan">📷</span>}
-                                {item.icon === 'dns' && <span className="text-cyber-cyan">🖥️</span>}
-                                {item.icon === 'storage' && <span className="text-cyber-cyan">💾</span>}
-                                {item.icon === 'desktop_windows' && <span className="text-cyber-cyan">💻</span>}
+                                <span className="text-cyber-cyan">{item.icon}</span>
                                 {item.label}
                             </div>
                         ))}
@@ -140,20 +437,21 @@ function SystemFlowPuzzle({
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                     className={`
-            drop-zone min-h-24 flex flex-wrap gap-2 items-center p-4 border-2 border-dashed
-            ${draggedItem ? 'border-cyber-cyan/50 bg-cyber-cyan/5' : 'border-cyber-border'}
-            rounded transition-colors
-          `}
+                        drop-zone min-h-24 flex flex-wrap gap-2 items-center p-4 border-2 border-dashed
+                        ${draggedItem ? 'border-cyber-cyan/50 bg-cyber-cyan/5' : 'border-cyber-border'}
+                        rounded transition-colors
+                    `}
                 >
                     {dropZone.length === 0 ? (
-                        <span className="text-cyber-muted text-sm w-full text-center">Drag components here in sequence...</span>
+                        <span className="text-cyber-muted text-sm w-full text-center">Drag chambers here in sequence...</span>
                     ) : (
                         dropZone.map((id, index) => (
                             <div key={id} className="flex items-center gap-1">
                                 <div
-                                    className="px-3 py-1 bg-cyber-cyan/20 border border-cyber-cyan rounded text-xs font-mono cursor-pointer hover:bg-cyber-red/20 hover:border-cyber-red"
+                                    className="px-3 py-1 bg-cyber-cyan/20 border border-cyber-cyan rounded text-xs font-mono cursor-pointer hover:bg-cyber-red/20 hover:border-cyber-red flex items-center gap-1"
                                     onClick={() => handleRemove(id)}
                                 >
+                                    <span>{getItemIcon(id)}</span>
                                     {getItemLabel(id)}
                                 </div>
                                 {index < dropZone.length - 1 && (
@@ -174,51 +472,54 @@ function SystemFlowPuzzle({
                 </div>
             )}
 
-            <button
-                onClick={handleSubmit}
-                disabled={dropZone.length !== 5 || submitting}
-                className="btn-neon w-full"
-            >
-                {submitting ? 'VALIDATING...' : 'VERIFY FLOW'}
-            </button>
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={handleSubmit}
+                    disabled={dropZone.length !== 7 || submitting}
+                    className="btn-neon flex-1"
+                >
+                    {submitting ? 'VALIDATING...' : 'VERIFY BUNKER ROUTE'}
+                </button>
+                <HintButton level={2} onPointsChange={onPointsChange} />
+            </div>
         </div>
     );
 }
 
-// Failure Point Selection Component
-function FailurePointPuzzle({
+// ───────────────── Level 3: Caesar Cipher Decryption ─────────────────
+
+function CaesarCipherPuzzle({
     onComplete,
-    disabled
+    disabled,
+    onPointsChange,
 }: {
     onComplete: () => void;
     disabled: boolean;
+    onPointsChange: () => void;
 }) {
-    const [selectedNode, setSelectedNode] = useState<string | null>(null);
+    const [answer, setAnswer] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const nodes = [
-        { id: 'cctv', label: 'CCTV Camera', icon: 'videocam' },
-        { id: 'server', label: 'Control Server', icon: 'dns' },
-        { id: 'db', label: 'Access Log DB', icon: 'storage' },
-        { id: 'monitoring', label: 'Monitoring Terminal', icon: 'desktop_windows' },
-    ];
+    const encryptedText = 'ERPELQJ KDV EHHQ SODQQHG RQ EODFN ULGJH DLUILHOG';
 
     const handleSubmit = async () => {
-        if (!selectedNode) return;
+        if (!answer.trim()) return;
         setSubmitting(true);
         setMessage(null);
 
         try {
-            const response = await api.submitEvidence2(selectedNode) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
+            const response = await api.submitEvidence3(answer) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
-                setMessage({ type: 'success', text: `${response.message} (+${response.pointsEarned} Points)` });
+                setMessage({ type: 'success', text: response.message });
+                onPointsChange();
                 setTimeout(onComplete, 1500);
             } else {
-                setMessage({ type: 'error', text: `${response.message} (-${response.pointsDeducted} Points)` });
+                setMessage({ type: 'error', text: response.message });
+                onPointsChange();
             }
-        } catch (err) {
-            setMessage({ type: 'error', text: 'Node analysis failed.' });
+        } catch {
+            setMessage({ type: 'error', text: 'Decryption analysis failed.' });
         } finally {
             setSubmitting(false);
         }
@@ -227,41 +528,37 @@ function FailurePointPuzzle({
     if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ LOCATION CONFIRMED</div>
-                <p className="text-cyber-muted text-sm">Failure point isolated: Control Server</p>
+                <div className="text-cyber-green text-lg font-mono mb-2">✓ TRANSMISSION DECRYPTED</div>
+                <p className="text-cyber-muted text-sm">Bombing has been planned on Black Ridge Airfield</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            <StorylineDisplay level={3} />
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
                 <p className="text-cyber-muted text-sm font-mono mb-4">
-                    Live feed was visible, but no footage or logs were recorded. Identify the failure point.
+                    The intercepted transmission uses a simple letter-shift cipher. Decrypt the message below:
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {nodes.map(node => (
-                        <button
-                            key={node.id}
-                            onClick={() => setSelectedNode(node.id)}
-                            className={`
-                p-4 rounded border text-left transition-all duration-300 font-mono text-sm flex items-center gap-3
-                ${selectedNode === node.id
-                                    ? 'border-cyber-cyan bg-[rgba(0,255,255,0.2)] text-cyber-cyan shadow-[0_0_20px_rgba(0,255,255,0.4)]'
-                                    : 'border-cyber-border hover:border-cyber-cyan/50 hover:bg-cyber-cyan/5 text-cyber-muted'}
-              `}
-                        >
-                            {/* Icon placeholders if needed, currently using text based icons in previous comp, let's just keep text label clean or reuse previous icons logic if mapped */}
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-cyber-darker border ${selectedNode === node.id ? 'border-cyber-cyan' : 'border-cyber-border'}`}>
-                                {node.id === 'cctv' && '📷'}
-                                {node.id === 'server' && '🖥️'}
-                                {node.id === 'db' && '💾'}
-                                {node.id === 'monitoring' && '💻'}
-                            </div>
-                            <span>{node.label}</span>
-                        </button>
-                    ))}
+                {/* Encrypted message display */}
+                <div className="bg-cyber-darker rounded border border-cyber-orange/30 p-4 mb-4">
+                    <div className="text-xs text-cyber-muted mb-2 font-mono">INTERCEPTED TRANSMISSION:</div>
+                    <div className="text-cyber-orange font-mono text-lg tracking-wider text-center font-bold">
+                        {encryptedText}
+                    </div>
+                </div>
+
+                {/* Answer input */}
+                <div className="space-y-2">
+                    <label className="text-xs text-cyber-muted font-mono">DECRYPTED MESSAGE:</label>
+                    <textarea
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        placeholder="Enter the decrypted message..."
+                        className="input-cyber w-full h-20 resize-none"
+                    />
                 </div>
             </div>
 
@@ -274,51 +571,54 @@ function FailurePointPuzzle({
                 </div>
             )}
 
-            <button
-                onClick={handleSubmit}
-                disabled={!selectedNode || submitting}
-                className="btn-neon w-full"
-            >
-                {submitting ? 'ANALYZING...' : 'CONFIRM FAILURE LOCATION'}
-            </button>
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={handleSubmit}
+                    disabled={!answer.trim() || submitting}
+                    className="btn-neon flex-1"
+                >
+                    {submitting ? 'DECRYPTING...' : 'SUBMIT DECRYPTION'}
+                </button>
+                <HintButton level={3} onPointsChange={onPointsChange} />
+            </div>
         </div>
     );
 }
 
-// Corrupted Logs Puzzle (Reason Selection)
-function CorruptedLogsPuzzle({
+// ───────────────── Level 4: Binary Decoding ─────────────────
+
+function BinaryDecodePuzzle({
     onComplete,
-    disabled
+    disabled,
+    onPointsChange,
 }: {
     onComplete: () => void;
     disabled: boolean;
+    onPointsChange: () => void;
 }) {
-    const [selectedReason, setSelectedReason] = useState<string | null>(null);
+    const [answer, setAnswer] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const reasons = [
-        { id: 'storage', label: 'Storage Overflow' },
-        { id: 'power', label: 'Power Surge' },
-        { id: 'datetime', label: 'Date & Time Mismatch' }, // Correct
-        { id: 'firmware', label: 'Camera Firmware Bug' },
-    ];
+    const binaryString = '1110010111111';
 
     const handleSubmit = async () => {
-        if (!selectedReason) return;
+        if (!answer.trim()) return;
         setSubmitting(true);
         setMessage(null);
 
         try {
-            const response = await api.submitEvidence3(selectedReason as any) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
+            const response = await api.submitEvidence4(answer) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
-                setMessage({ type: 'success', text: `${response.message} (+${response.pointsEarned} Points)` });
+                setMessage({ type: 'success', text: response.message });
+                onPointsChange();
                 setTimeout(onComplete, 1500);
             } else {
-                setMessage({ type: 'error', text: `${response.message} (-${response.pointsDeducted} Points)` });
+                setMessage({ type: 'error', text: response.message });
+                onPointsChange();
             }
-        } catch (err) {
-            setMessage({ type: 'error', text: 'Analysis failed.' });
+        } catch {
+            setMessage({ type: 'error', text: 'Binary analysis failed.' });
         } finally {
             setSubmitting(false);
         }
@@ -327,35 +627,38 @@ function CorruptedLogsPuzzle({
     if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ CAUSE IDENTIFIED</div>
-                <p className="text-cyber-muted text-sm">Corrupted logs attributed to Date & Time mismatch</p>
+                <div className="text-cyber-green text-lg font-mono mb-2">✓ FRAGMENT DECODED</div>
+                <p className="text-cyber-muted text-sm">Authentication code fragment: 7359</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            <StorylineDisplay level={4} />
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
                 <p className="text-cyber-muted text-sm font-mono mb-4">
-                    Recovered logs exist, but timestamps don&apos;t align with the murder timeline.
-                    Why was the digital evidence corrupted or unreliable?
+                    A binary imprint was recovered from the transmission header. Decode the fragment to reveal the authentication code.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {reasons.map(reason => (
-                        <button
-                            key={reason.id}
-                            onClick={() => setSelectedReason(reason.id)}
-                            className={`
-                p-4 rounded border text-left transition-all duration-300 font-mono text-sm
-                ${selectedReason === reason.id
-                                    ? 'border-cyber-cyan bg-[rgba(0,255,255,0.2)] text-cyber-cyan shadow-[0_0_20px_rgba(0,255,255,0.4)]'
-                                    : 'border-cyber-border hover:border-cyber-cyan/50 hover:bg-cyber-cyan/5 text-cyber-muted'}
-              `}
-                        >
-                            {reason.label}
-                        </button>
-                    ))}
+                {/* Binary display */}
+                <div className="bg-cyber-darker rounded border border-cyber-cyan/30 p-4 mb-4">
+                    <div className="text-xs text-cyber-muted mb-2 font-mono">BINARY FRAGMENT:</div>
+                    <div className="text-cyber-cyan font-mono text-3xl tracking-[0.3em] text-center font-bold">
+                        {binaryString}
+                    </div>
+                </div>
+
+                {/* Answer input */}
+                <div className="space-y-2">
+                    <label className="text-xs text-cyber-muted font-mono">DECODED VALUE:</label>
+                    <input
+                        type="text"
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        placeholder="Enter the decoded number..."
+                        className="input-cyber w-full text-center text-lg tracking-widest"
+                    />
                 </div>
             </div>
 
@@ -368,269 +671,169 @@ function CorruptedLogsPuzzle({
                 </div>
             )}
 
-            <button
-                onClick={handleSubmit}
-                disabled={!selectedReason || submitting}
-                className="btn-neon w-full"
-            >
-                {submitting ? 'ANALYZING...' : 'CONFIRM CAUSE'}
-            </button>
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={handleSubmit}
+                    disabled={!answer.trim() || submitting}
+                    className="btn-neon flex-1"
+                >
+                    {submitting ? 'DECODING...' : 'SUBMIT DECODED VALUE'}
+                </button>
+                <HintButton level={4} onPointsChange={onPointsChange} />
+            </div>
         </div>
     );
 }
 
-// Root Cause Analysis Component
-function RootCausePuzzle({
+// ───────────────── Level 5: Traitor Identification ─────────────────
+
+function TraitorIdentificationPuzzle({
     onComplete,
-    onEscapeUnlock,
-    disabled
+    disabled,
+    onPointsChange,
 }: {
     onComplete: () => void;
-    onEscapeUnlock: () => void;
     disabled: boolean;
+    onPointsChange: () => void;
 }) {
-    const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+    const [selectedRegiment, setSelectedRegiment] = useState<string | null>(null);
+    const [traitorId, setTraitorId] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const adminLogs = [
-        { time: '01:52 AM', user: 'ADMIN', action: 'Admin login' },
-        { time: '01:54 AM', user: 'ADMIN', action: 'Recording Mode Changed' },
-        { time: '01:55 AM', user: 'ADMIN', action: 'Admin logout' },
+    const regiments = [
+        { id: 'airforce regiment', label: 'Airforce Regiment', icon: '✈️' },
+        { id: 'communication field', label: 'Communication Field', icon: '📡' },
+        { id: 'southern infantry', label: 'Southern Infantry', icon: '🎖️' },
     ];
 
     const handleSubmit = async () => {
-        if (!selectedChoice) return;
+        if (!selectedRegiment || !traitorId.trim()) return;
         setSubmitting(true);
         setMessage(null);
 
         try {
-            console.log('Submitting Evidence 4:', selectedChoice);
-            const response = await api.submitEvidence4(selectedChoice) as {
-                success: boolean;
-                message: string;
-                escapeCodeUnlocked?: boolean;
-                pointsEarned?: number;
-                pointsDeducted?: number;
-            };
-            console.log('Evidence 4 response:', response);
-            if (response.success) {
-                setMessage({ type: 'success', text: `${response.message} (+${response.pointsEarned} Points)` });
-                if (response.escapeCodeUnlocked) {
-                    console.log('Escape code unlocked, triggering refresh');
-                    onEscapeUnlock();
-                }
-                setTimeout(onComplete, 1500);
-            } else {
-                setMessage({ type: 'error', text: `${response.message} (-${response.pointsDeducted} Points)` });
-            }
-        } catch (err) {
-            console.error('Evidence 4 submission error:', err);
-            setMessage({ type: 'error', text: 'Analysis failed.' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    if (disabled) {
-        return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ ROOT CAUSE CONFIRMED</div>
-                <p className="text-cyber-muted text-sm">Investigation complete - Human Error (Manual Mode)</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6">
-            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
-                <p className="text-cyber-muted text-sm font-mono mb-4">
-                    Someone accessed the system shortly before the blackout. What was the most likely reason the system failed to record the incident?
-                </p>
-
-                {/* Admin log viewer */}
-                <div className="bg-cyber-darker rounded border border-cyber-border p-3 mb-4 font-mono text-xs">
-                    <div className="text-cyber-muted mb-2 border-b border-cyber-border pb-1">SYSTEM LOGS:</div>
-                    {adminLogs.map((log, index) => (
-                        <div
-                            key={index}
-                            className="py-1"
-                        >
-                            <span className="text-cyber-orange">[{log.time}]</span>
-                            <span className="text-cyber-cyan mx-2">{log.user}</span>
-                            <span className="text-cyber-text">{log.action}</span>
-                            {log.action.includes('Mode') && <span className="text-cyber-red ml-2">&lt; WARNING</span>}
-                        </div>
-                    ))}
-                    <div className="mt-2 text-cyber-muted italic">... Recording Mode: Manual ...</div>
-                </div>
-
-                {/* Choice buttons */}
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                    <button
-                        onClick={() => setSelectedChoice('system-crash')}
-                        className={`
-              p-4 rounded-lg border-2 text-left transition-all duration-300
-              ${selectedChoice === 'system-crash'
-                                ? 'border-cyber-cyan bg-[rgba(0,255,255,0.2)] text-cyber-cyan'
-                                : 'border-cyber-border hover:border-cyber-cyan/50 hover:bg-cyber-cyan/5'}
-            `}
-                    >
-                        <div className={`text-lg font-bold ${selectedChoice === 'system-crash' ? 'text-cyber-cyan' : ''}`}>💥 System Crash</div>
-                        <p className="text-cyber-muted text-xs">Hardware or software failure caused the outage</p>
-                    </button>
-
-                    <button
-                        onClick={() => setSelectedChoice('manual-mode')}
-                        className={`
-              p-4 rounded-lg border-2 text-left transition-all duration-300
-              ${selectedChoice === 'manual-mode'
-                                ? 'border-cyber-cyan bg-[rgba(0,255,255,0.2)] text-cyber-cyan shadow-[0_0_20px_rgba(0,255,255,0.4)]'
-                                : 'border-cyber-border hover:border-cyber-cyan/50 hover:bg-cyber-cyan/5'}
-            `}
-                    >
-                        <div className={`text-lg font-bold mb-1 ${selectedChoice === 'manual-mode' ? 'text-cyber-cyan' : ''}`}>🔐 Manual Mode</div>
-                        <p className="text-cyber-muted text-xs">Recording was set to Manual Mode (Human Error)</p>
-                    </button>
-                </div>
-            </div>
-
-            {message && (
-                <div className={`p-3 rounded border ${message.type === 'success'
-                    ? 'bg-cyber-green/10 border-cyber-green text-cyber-green'
-                    : 'bg-cyber-red/10 border-cyber-red text-cyber-red'
-                    } font-mono text-sm`}>
-                    {message.text}
-                </div>
-            )}
-
-            <button
-                onClick={handleSubmit}
-                disabled={!selectedChoice || submitting}
-                className="btn-neon w-full"
-            >
-                {submitting ? 'ANALYZING...' : 'CONFIRM ROOT CAUSE'}
-            </button>
-        </div>
-    );
-}
-
-// Escape Code Input Component
-function EscapeCodeInput({
-    unlocked,
-    completed,
-    onComplete
-}: {
-    unlocked: boolean;
-    completed: boolean;
-    onComplete: () => void;
-}) {
-    const [code, setCode] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    const handleSubmit = async () => {
-        if (!code.trim()) return;
-        setSubmitting(true);
-        setMessage(null);
-
-        try {
-            const response = await api.submitEscapeCode(code) as {
+            const response = await api.submitEvidence5(selectedRegiment, traitorId) as {
                 success: boolean;
                 message: string;
                 roundComplete?: boolean;
+                pointsEarned?: number;
+                pointsDeducted?: number;
             };
             if (response.success) {
                 setMessage({ type: 'success', text: response.message });
+                onPointsChange();
                 setTimeout(onComplete, 2000);
             } else {
                 setMessage({ type: 'error', text: response.message });
+                onPointsChange();
             }
-        } catch (err) {
-            setMessage({ type: 'error', text: 'Escape code validation failed.' });
+        } catch {
+            setMessage({ type: 'error', text: 'Identification analysis failed.' });
         } finally {
             setSubmitting(false);
         }
     };
 
-    if (completed) {
+    if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center shadow-[0_0_15px_rgba(0,255,136,0.1)]">
-                <div className="text-4xl mb-4">✅</div>
-                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">ESCAPE CODE VERIFIED</div>
+                <div className="text-4xl mb-4">🎖️</div>
+                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">TRAITOR IDENTIFIED</div>
                 <p className="text-cyber-green/70 text-sm font-mono tracking-tighter">
-                    Round 1 successfully completed. Awaiting further orders.
+                    Investigation complete. Round 1 cleared.
                 </p>
-            </div>
-        );
-    }
-
-    if (!unlocked) {
-        return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-border">
-                <div className="text-center">
-                    <div className="text-4xl mb-4">🔒</div>
-                    <h3 className="text-xl font-orbitron text-cyber-muted mb-2">ESCAPE CODE LOCKED</h3>
-                    <p className="text-cyber-muted text-sm font-mono">
-                        Complete Evidence 2, 3, and 4 to unlock the escape code
-                    </p>
-                </div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-cyan animate-pulse-slow">
-            <div className="text-center mb-6">
-                <div className="text-4xl mb-4">🔓</div>
-                <h3 className="text-xl font-orbitron text-cyber-cyan mb-2">ESCAPE CODE UNLOCKED</h3>
-                <p className="text-cyber-muted text-sm font-mono">
-                    Enter the escape code to complete Round 1
-                </p>
-            </div>
+        <div className="space-y-4">
+            <StorylineDisplay level={5} />
+            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
 
-            <div className="flex gap-4">
-                <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    placeholder="ENTER ESCAPE CODE"
-                    className="input-cyber flex-1 text-center text-lg tracking-widest"
-                />
-                <button
-                    onClick={handleSubmit}
-                    disabled={!code.trim() || submitting}
-                    className="btn-neon success"
-                >
-                    {submitting ? '...' : 'SUBMIT'}
-                </button>
+                {/* Q1: Regiment Selection */}
+                <div className="mb-6">
+                    <div className="bg-cyber-darker rounded border border-cyber-border p-3 mb-4 font-mono text-xs">
+                        <div className="text-cyber-muted mb-2 border-b border-cyber-border pb-1">INTELLIGENCE BRIEF:</div>
+                        <p className="text-cyber-text py-1">
+                            The AirStrike information was shared first to the <span className="text-cyber-cyan">Airforce Regiment</span>,
+                            then to the <span className="text-cyber-cyan">Communication Engineers</span>, and
+                            <span className="text-cyber-cyan"> 2 Soldiers from the Southern Infantry</span> were present.
+                        </p>
+                    </div>
+
+                    <p className="text-cyber-muted text-sm font-mono mb-3">
+                        QUESTION 1: Based on the evidence, which regiment does the traitor belong to?
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {regiments.map(reg => (
+                            <button
+                                key={reg.id}
+                                onClick={() => setSelectedRegiment(reg.id)}
+                                className={`
+                                    p-4 rounded border text-left transition-all duration-300 font-mono text-sm flex items-center gap-3
+                                    ${selectedRegiment === reg.id
+                                        ? 'border-cyber-cyan bg-[rgba(0,255,255,0.2)] text-cyber-cyan shadow-[0_0_20px_rgba(0,255,255,0.4)]'
+                                        : 'border-cyber-border hover:border-cyber-cyan/50 hover:bg-cyber-cyan/5 text-cyber-muted'}
+                                `}
+                            >
+                                <span className="text-2xl">{reg.icon}</span>
+                                <span>{reg.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Q2: Traitor ID */}
+                <div>
+                    <p className="text-cyber-muted text-sm font-mono mb-3">
+                        QUESTION 2: Enter the Traitor&apos;s ID.
+                    </p>
+                    <p className="text-cyber-red text-xs font-mono mb-3">
+                        ⚠ WARNING: If incorrect, you are accusing an innocent officer.
+                    </p>
+                    <input
+                        type="text"
+                        value={traitorId}
+                        onChange={(e) => setTraitorId(e.target.value.toUpperCase())}
+                        placeholder="ENTER TRAITOR ID (e.g. XX-0000000)"
+                        className="input-cyber w-full text-center text-lg tracking-widest"
+                    />
+                </div>
             </div>
 
             {message && (
-                <div className={`mt-4 p-3 rounded border ${message.type === 'success'
+                <div className={`p-3 rounded border ${message.type === 'success'
                     ? 'bg-cyber-green/10 border-cyber-green text-cyber-green'
                     : 'bg-cyber-red/10 border-cyber-red text-cyber-red'
-                    } font-mono text-sm text-center`}>
+                    } font-mono text-sm`}>
                     {message.text}
                 </div>
             )}
 
-            <div className="mt-6 p-3 bg-cyber-darker rounded border border-cyber-border">
-                <p className="text-cyber-muted text-xs font-mono text-center">
-                    HINT: Combine the answers from Levels 2, 3, and 4 (First letters: C, D, M).
-                </p>
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={handleSubmit}
+                    disabled={!selectedRegiment || !traitorId.trim() || submitting}
+                    className="btn-neon flex-1"
+                >
+                    {submitting ? 'IDENTIFYING...' : '🎯 IDENTIFY TRAITOR'}
+                </button>
+                <HintButton level={5} onPointsChange={onPointsChange} />
             </div>
         </div>
     );
 }
 
-// Main Round 1 Page
+// ───────────────── Main Round 1 Page ─────────────────
+
 export default function Round1Page() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<RoundStatus | null>(null);
     const [expiresAt, setExpiresAt] = useState<string | null>(null);
-    const [activeEvidence, setActiveEvidence] = useState<number>(1);
+    const [activeLevel, setActiveLevel] = useState<number>(1);
     const [showAccessMessage, setShowAccessMessage] = useState<{ type: 'granted' | 'denied'; message: string } | null>(null);
 
     const fetchStatus = useCallback(async () => {
@@ -641,14 +844,6 @@ export default function Round1Page() {
                 api.getTimer() as Promise<{ expiresAt: string }>
             ]);
             console.log('Round 1 status received:', statusData);
-            console.log('Evidence statuses:', {
-                evidence1: statusData.evidence1,
-                evidence2: statusData.evidence2,
-                evidence3: statusData.evidence3,
-                evidence4: statusData.evidence4,
-                escapeCodeUnlocked: statusData.escapeCodeUnlocked,
-                points: statusData.points
-            });
             setStatus(statusData);
             setExpiresAt(timerData.expiresAt);
         } catch (error) {
@@ -661,37 +856,25 @@ export default function Round1Page() {
         fetchStatus().finally(() => setLoading(false));
     }, [fetchStatus]);
 
-    const handleEvidenceComplete = (evidenceNum: number) => {
-        console.log(`Evidence ${evidenceNum} completed, refreshing status...`);
-        setShowAccessMessage({ type: 'granted', message: `Evidence ${evidenceNum} Verified` });
+    const handleLevelComplete = (levelNum: number) => {
+        console.log(`Level ${levelNum} completed, refreshing status...`);
+        setShowAccessMessage({ type: 'granted', message: `Level ${levelNum} Verified` });
 
-        // Immediate status refresh
-        fetchStatus().then(() => {
-            console.log('Status refreshed after evidence completion');
-        });
+        fetchStatus();
 
         setTimeout(() => {
             setShowAccessMessage(null);
-            // Force another refresh to ensure state is updated
             fetchStatus();
-            if (evidenceNum < 4) {
-                setActiveEvidence(evidenceNum + 1);
+            if (levelNum < 5) {
+                setActiveLevel(levelNum + 1);
             } else {
-                // Evidence 4 complete -> Scroll to escape code input
-                const escapeInput = document.getElementById('escape-code-section');
-                if (escapeInput) {
-                    escapeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    escapeInput.classList.add('animate-pulse');
-                }
+                // Level 5 = round complete
+                setShowAccessMessage({ type: 'granted', message: 'Round 1 Complete! Proceeding to Round 2...' });
+                setTimeout(() => {
+                    router.push('/round2');
+                }, 2500);
             }
         }, 2000);
-    };
-
-    const handleRoundComplete = () => {
-        setShowAccessMessage({ type: 'granted', message: 'Round 1 Complete! Proceeding to Round 2...' });
-        setTimeout(() => {
-            router.push('/round2');
-        }, 2500);
     };
 
     if (loading) {
@@ -699,17 +882,18 @@ export default function Round1Page() {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="loader mx-auto mb-4" />
-                    <p className="text-cyber-muted font-mono">Loading Evidence...</p>
+                    <p className="text-cyber-muted font-mono">Loading Intelligence...</p>
                 </div>
             </div>
         );
     }
 
-    const evidences = [
-        { num: 1, title: 'System Flow Reconstruction', complete: status?.evidence1 },
-        { num: 2, title: 'Failure Location', complete: status?.evidence2 },
-        { num: 3, title: 'Corrupted Evidence Analysis', complete: status?.evidence3 },
-        { num: 4, title: 'Root Cause & Human Involvement', complete: status?.evidence4 },
+    const levels = [
+        { num: 1, title: 'Torn Map Fragment', complete: status?.evidence1 },
+        { num: 2, title: 'Bunker Mapping', complete: status?.evidence2 },
+        { num: 3, title: 'Cipher Decryption', complete: status?.evidence3 },
+        { num: 4, title: 'Binary Decoding', complete: status?.evidence4 },
+        { num: 5, title: 'Traitor Identification', complete: status?.evidence5 },
     ];
 
     return (
@@ -732,8 +916,9 @@ export default function Round1Page() {
                         ← BACK TO DASHBOARD
                     </button>
                     <h1 className="text-3xl font-orbitron font-bold text-cyber-cyan">
-                        ROUND 1: THE SILENT CONTROL ROOM MURDER
+                        ROUND 1: ATTACK ON BLACKRIDGE AIRFIELD
                     </h1>
+                    <p className="text-cyber-muted text-sm font-mono mt-1">Year: 1943 · Eastern Front · Classified</p>
                 </div>
 
                 <div className="flex flex-wrap items-center">
@@ -759,45 +944,54 @@ export default function Round1Page() {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Evidence Tabs */}
+                {/* Level Tabs */}
                 <div className="lg:col-span-1">
                     <div className="card-cyber sticky top-4">
-                        <h2 className="text-lg font-orbitron font-bold text-cyber-text mb-4">EVIDENCE</h2>
+                        <h2 className="text-lg font-orbitron font-bold text-cyber-text mb-4">INVESTIGATION</h2>
                         <div className="space-y-2">
-                            {evidences.map((ev) => (
+                            {levels.map((lv) => (
                                 <button
-                                    key={ev.num}
-                                    onClick={() => setActiveEvidence(ev.num)}
+                                    key={lv.num}
+                                    onClick={() => setActiveLevel(lv.num)}
                                     className={`
-                    w-full p-3 rounded-lg border text-left transition-all font-mono text-sm
-                    ${activeEvidence === ev.num
+                                        w-full p-3 rounded-lg border text-left transition-all font-mono text-sm
+                                        ${activeLevel === lv.num
                                             ? 'border-cyber-cyan bg-cyber-cyan/10 text-cyber-cyan'
-                                            : ev.complete
+                                            : lv.complete
                                                 ? 'border-cyber-green bg-cyber-green/5 text-cyber-green'
                                                 : 'border-cyber-border hover:border-cyber-blue text-cyber-muted'}
-                  `}
+                                    `}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border ${ev.complete ? 'border-cyber-green bg-cyber-green/20' : 'border-current'
+                                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border ${lv.complete ? 'border-cyber-green bg-cyber-green/20' : 'border-current'
                                             }`}>
-                                            {ev.complete ? '✓' : ev.num}
+                                            {lv.complete ? '✓' : lv.num}
                                         </span>
-                                        <span>{ev.title}</span>
+                                        <span>{lv.title}</span>
                                     </div>
                                 </button>
                             ))}
                         </div>
+
+                        {/* Scoring Info */}
+                        <div className="mt-4 p-3 bg-cyber-darker rounded border border-cyber-border">
+                            <div className="text-xs text-cyber-muted font-mono space-y-1">
+                                <div className="text-cyber-green">✓ Correct: +25 pts</div>
+                                <div className="text-cyber-red">✗ Wrong: -10 pts</div>
+                                <div className="text-cyber-orange">💡 Hint: -15 pts</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Active Evidence Panel */}
+                {/* Active Level Panel */}
                 <div className="lg:col-span-3">
                     <div className="card-cyber">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-orbitron font-bold text-cyber-text">
-                                EVIDENCE {activeEvidence}: {evidences[activeEvidence - 1].title}
+                                LEVEL {activeLevel}: {levels[activeLevel - 1].title}
                             </h2>
-                            {evidences[activeEvidence - 1].complete && (
+                            {levels[activeLevel - 1].complete && (
                                 <span className="badge badge-complete">
                                     VERIFIED
                                 </span>
@@ -805,61 +999,64 @@ export default function Round1Page() {
                         </div>
 
                         <div className="flex-1">
-                            {activeEvidence === 1 && (
-                                <SystemFlowPuzzle
-                                    onComplete={() => handleEvidenceComplete(1)}
+                            {activeLevel === 1 && (
+                                <JigsawPuzzle
+                                    onComplete={() => handleLevelComplete(1)}
                                     disabled={status?.evidence1 || false}
+                                    onPointsChange={fetchStatus}
                                 />
                             )}
 
-                            {activeEvidence === 2 && (
-                                <FailurePointPuzzle
-                                    onComplete={() => handleEvidenceComplete(2)}
+                            {activeLevel === 2 && (
+                                <BunkerSequencePuzzle
+                                    onComplete={() => handleLevelComplete(2)}
                                     disabled={status?.evidence2 || false}
+                                    onPointsChange={fetchStatus}
                                 />
                             )}
 
-                            {activeEvidence === 3 && (
-                                <CorruptedLogsPuzzle
-                                    onComplete={() => handleEvidenceComplete(3)}
+                            {activeLevel === 3 && (
+                                <CaesarCipherPuzzle
+                                    onComplete={() => handleLevelComplete(3)}
                                     disabled={status?.evidence3 || false}
+                                    onPointsChange={fetchStatus}
                                 />
                             )}
 
-                            {activeEvidence === 4 && (
-                                <RootCausePuzzle
-                                    onComplete={() => handleEvidenceComplete(4)}
-                                    onEscapeUnlock={fetchStatus}
+                            {activeLevel === 4 && (
+                                <BinaryDecodePuzzle
+                                    onComplete={() => handleLevelComplete(4)}
                                     disabled={status?.evidence4 || false}
+                                    onPointsChange={fetchStatus}
+                                />
+                            )}
+
+                            {activeLevel === 5 && (
+                                <TraitorIdentificationPuzzle
+                                    onComplete={() => handleLevelComplete(5)}
+                                    disabled={status?.evidence5 || false}
+                                    onPointsChange={fetchStatus}
                                 />
                             )}
                         </div>
                     </div>
 
-                    {/* Escape Code Section */}
-                    <div id="escape-code-section" className="mt-6 scroll-mt-20">
-                        <EscapeCodeInput
-                            unlocked={status?.escapeCodeUnlocked || false}
-                            completed={status?.completed || false}
-                            onComplete={handleRoundComplete}
-                        />
-                    </div>
-
                     {/* Terminal Output */}
                     <div className="mt-6">
                         <Terminal
-                            title="ANALYSIS_LOG"
+                            title="INVESTIGATION_LOG"
                             lines={[
-                                { type: 'prompt', text: 'Initializing evidence analysis...' },
-                                { type: 'output', text: `[STATUS] Evidence 1: ${status?.evidence1 ? 'VERIFIED' : 'PENDING'}` },
-                                { type: 'output', text: `[STATUS] Evidence 2: ${status?.evidence2 ? 'VERIFIED' : 'PENDING'}` },
-                                { type: 'output', text: `[STATUS] Evidence 3: ${status?.evidence3 ? 'VERIFIED' : 'PENDING'}` },
-                                { type: 'output', text: `[STATUS] Evidence 4: ${status?.evidence4 ? 'VERIFIED' : 'PENDING'}` },
+                                { type: 'prompt', text: 'Initializing investigation protocol...' },
+                                { type: 'output', text: `[LEVEL 1] Torn Map Fragment: ${status?.evidence1 ? 'VERIFIED' : 'PENDING'}` },
+                                { type: 'output', text: `[LEVEL 2] Bunker Mapping: ${status?.evidence2 ? 'VERIFIED' : 'PENDING'}` },
+                                { type: 'output', text: `[LEVEL 3] Cipher Decryption: ${status?.evidence3 ? 'VERIFIED' : 'PENDING'}` },
+                                { type: 'output', text: `[LEVEL 4] Binary Decoding: ${status?.evidence4 ? 'VERIFIED' : 'PENDING'}` },
+                                { type: 'output', text: `[LEVEL 5] Traitor Identification: ${status?.evidence5 ? 'VERIFIED' : 'PENDING'}` },
                                 {
-                                    type: status?.escapeCodeUnlocked ? 'success' : 'output',
-                                    text: status?.escapeCodeUnlocked
-                                        ? '>>> ESCAPE CODE UNLOCKED - ENTER CODE TO PROCEED <<<'
-                                        : '[LOCKED] Complete Evidence 2, 3, 4 to unlock escape code'
+                                    type: status?.completed ? 'success' : 'output',
+                                    text: status?.completed
+                                        ? '>>> INVESTIGATION COMPLETE – TRAITOR IDENTIFIED <<<'
+                                        : '[IN PROGRESS] Complete all 5 levels to close the investigation'
                                 },
                             ]}
                         />

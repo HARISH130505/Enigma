@@ -124,32 +124,36 @@ router.post('/start', authenticateTeam, async (req: AuthRequest, res: Response) 
 // Get case file briefing
 router.get('/briefing', authenticateTeam, async (req: AuthRequest, res: Response) => {
     res.json({
-        title: "THE SILENT CONTROL ROOM MURDER",
-        classification: "TOP SECRET",
+        title: "ATTACK ON BLACKRIDGE AIRFIELD",
+        classification: "WAR BRIEFING – CLASSIFIED",
         briefing: `
-      INCIDENT REPORT #7X-DELTA
-      
-      At 03:47 AM, the central monitoring station went dark.
-      When systems came back online, we found Senior Technician 
-      Marcus Webb deceased at his station.
-      
-      Initial forensics suggest a catastrophic system failure,
-      but our analysts have detected anomalies that suggest
-      something far more sinister.
-      
-      Your mission: Investigate the evidence, decode the logs,
-      and uncover the truth before the trail goes cold.
-      
+      Year: 1943. Eastern Front.
+
+      For weeks, our division has studied an enemy-controlled airfield 
+      believed to dominate the skies over this region. Destroying it 
+      would shift the balance of the war.
+
+      At 0300 hours, High Command approved a covert AirStrike.
+      The strike coordinates, deployment timings, and confirmation 
+      protocol were secured inside our underground command bunker.
+
+      Yet at 04:17 hours, a silent alert was triggered.
+      Internal data breach detected.
+      Unauthorized signal activity logged.
+
+      The traitor is inside the bunker.
+
+      Investigators — your task is to reconstruct what happened 
+      inside these walls… and identify the officer responsible.
+
       Time is critical. You have 60 minutes.
-      
-      Good luck, Agent.
     `,
         objectives: [
-            "Analyze the system flow for vulnerabilities",
-            "Identify the point of failure",
-            "Decode corrupted log entries",
-            "Determine the root cause",
-            "Extract the escape code to proceed"
+            "Reconstruct the torn map fragment recovered from the furnace",
+            "Map the bunker's internal progression route",
+            "Decrypt the intercepted transmission",
+            "Decode the binary authentication fragment",
+            "Identify the traitor among the officers"
         ]
     });
 });
