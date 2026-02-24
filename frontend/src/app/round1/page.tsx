@@ -287,7 +287,7 @@ function JigsawPuzzle({
 
                 <div className="p-3 bg-cyber-orange/10 border border-cyber-orange/30 rounded">
                     <p className="text-cyber-orange text-xs font-mono text-center">
-                        ⚠ After completing the puzzle, verify with your mentor, then click <strong>&quot;MARK AS COMPLETED&quot;</strong> below.
+                        ⚠ After completing the puzzle, verify with your mentor, then click <strong>MARK AS COMPLETED</strong> below.
                     </p>
                 </div>
             </div>
