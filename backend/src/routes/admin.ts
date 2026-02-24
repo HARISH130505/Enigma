@@ -17,7 +17,7 @@ router.post('/login', async (req: Request, res: Response) => {
         }
 
         const validUsername = username === process.env.ADMIN_USERNAME;
-        const validPassword = password === 'enigma2026!';
+        const validPassword = password === process.env.ADMIN_PASSWORD;
 
         if (!validUsername || !validPassword) {
             return res.status(401).json({ error: 'Invalid admin credentials.' });
