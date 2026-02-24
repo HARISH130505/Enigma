@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import supabase from '../utils/supabase';
 import { authenticateAdmin } from '../middleware/auth';
 
@@ -15,12 +16,7 @@ router.post('/login', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Credentials required.' });
         }
 
-        // Check against environment config (simple setup)
-        // In production, query admin_users table
         const validUsername = username === process.env.ADMIN_USERNAME;
-
-        // For demo, use simple password check
-        // In production: bcrypt.compare(password, storedHash)
         const validPassword = password === 'enigma2026!';
 
         if (!validUsername || !validPassword) {
@@ -39,17 +35,76 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-// Get all teams with progress
+// Create a new team (admin registers teams with name + access code)
+router.post('/teams/create', authenticateAdmin, async (req: Request, res: Response) => {
+    try {
+        const { teamName, accessCode } = req.body;
+
+        if (!teamName || !accessCode) {
+            return res.status(400).json({ error: 'Team name and access code are required.' });
+        }
+
+        // Check if team already exists
+        const { data: existing } = await supabase
+            .from('teams')
+            .select('id')
+            .eq('team_name', teamName.toLowerCase())
+            .single();
+
+        if (existing) {
+            return res.status(409).json({ error: 'Team name already exists.' });
+        }
+
+        const teamId = uuidv4();
+        const { error } = await supabase
+            .from('teams')
+            .insert({
+                id: teamId,
+                team_name: teamName.toLowerCase(),
+                access_code: accessCode
+            });
+
+        if (error) throw error;
+
+        res.status(201).json({
+            success: true,
+            team: { id: teamId, name: teamName.toLowerCase(), accessCode }
+        });
+    } catch (error) {
+        console.error('Team creation error:', error);
+        res.status(500).json({ error: 'Failed to create team.' });
+    }
+});
+
+// Delete a team
+router.delete('/teams/:teamId', authenticateAdmin, async (req: Request, res: Response) => {
+    try {
+        const { teamId } = req.params;
+
+        const { error } = await supabase
+            .from('teams')
+            .delete()
+            .eq('id', teamId);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: 'Team deleted.' });
+    } catch (error) {
+        console.error('Team deletion error:', error);
+        res.status(500).json({ error: 'Failed to delete team.' });
+    }
+});
+
+// Get all teams with progress, scores, and timestamps
 router.get('/teams', authenticateAdmin, async (req: Request, res: Response) => {
     try {
         const { data: teams, error: teamsError } = await supabase
             .from('teams')
-            .select('id, team_name, created_at');
+            .select('id, team_name, access_code, created_at');
 
         if (teamsError) throw teamsError;
 
-        // Get sessions for each team
-        const teamsWithProgress = await Promise.all(teams.map(async (team) => {
+        const teamsWithProgress = await Promise.all((teams || []).map(async (team) => {
             const { data: session } = await supabase
                 .from('game_sessions')
                 .select('*')
@@ -60,12 +115,16 @@ router.get('/teams', authenticateAdmin, async (req: Request, res: Response) => {
 
             let roundProgress = null;
             let attemptCount = 0;
+            let roundScores: Array<{ round: number; points: number; completedAt: string | null }> = [];
+            let totalScore = 0;
+            let lastCompletedAt: string | null = null;
 
             if (session) {
                 const { data: progress } = await supabase
                     .from('round_progress')
                     .select('*')
-                    .eq('session_id', session.id);
+                    .eq('session_id', session.id)
+                    .order('round_number');
 
                 const { count } = await supabase
                     .from('attempts')
@@ -74,6 +133,18 @@ router.get('/teams', authenticateAdmin, async (req: Request, res: Response) => {
 
                 roundProgress = progress;
                 attemptCount = count || 0;
+
+                // Build per-round scores
+                for (let r = 1; r <= 3; r++) {
+                    const rp = progress?.find((p: any) => p.round_number === r);
+                    const pts = rp?.points || 0;
+                    const completedAt = rp?.completed_at || null;
+                    roundScores.push({ round: r, points: pts, completedAt });
+                    totalScore += pts;
+                    if (completedAt && (!lastCompletedAt || completedAt > lastCompletedAt)) {
+                        lastCompletedAt = completedAt;
+                    }
+                }
             }
 
             return {
@@ -86,6 +157,9 @@ router.get('/teams', authenticateAdmin, async (req: Request, res: Response) => {
                     expiresAt: session.expires_at
                 } : null,
                 roundProgress,
+                roundScores,
+                totalScore,
+                lastCompletedAt,
                 attemptCount
             };
         }));
@@ -94,6 +168,91 @@ router.get('/teams', authenticateAdmin, async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Teams fetch error:', error);
         res.status(500).json({ error: 'Failed to fetch teams.' });
+    }
+});
+
+// Get leaderboard data (sorted by total score desc, then earliest completion asc)
+router.get('/leaderboard', authenticateAdmin, async (req: Request, res: Response) => {
+    try {
+        const { data: teams, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, team_name');
+
+        if (teamsError) throw teamsError;
+
+        const leaderboard = await Promise.all((teams || []).map(async (team) => {
+            const { data: session } = await supabase
+                .from('game_sessions')
+                .select('id, status, current_round, started_at, completed_at')
+                .eq('team_id', team.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (!session) {
+                return {
+                    teamId: team.id,
+                    teamName: team.team_name,
+                    totalScore: 0,
+                    roundScores: [
+                        { round: 1, points: 0, completedAt: null },
+                        { round: 2, points: 0, completedAt: null },
+                        { round: 3, points: 0, completedAt: null },
+                    ],
+                    lastCompletedAt: null,
+                    status: 'not_started',
+                    currentRound: 0,
+                    startedAt: null
+                };
+            }
+
+            const { data: progress } = await supabase
+                .from('round_progress')
+                .select('round_number, points, completed_at')
+                .eq('session_id', session.id)
+                .order('round_number');
+
+            let totalScore = 0;
+            let lastCompletedAt: string | null = null;
+            const roundScores = [1, 2, 3].map(r => {
+                const rp = progress?.find((p: any) => p.round_number === r);
+                const pts = rp?.points || 0;
+                const completedAt = rp?.completed_at || null;
+                totalScore += pts;
+                if (completedAt && (!lastCompletedAt || completedAt > lastCompletedAt)) {
+                    lastCompletedAt = completedAt;
+                }
+                return { round: r, points: pts, completedAt };
+            });
+
+            return {
+                teamId: team.id,
+                teamName: team.team_name,
+                totalScore,
+                roundScores,
+                lastCompletedAt,
+                status: session.status,
+                currentRound: session.current_round,
+                startedAt: session.started_at
+            };
+        }));
+
+        // Sort: highest score first, then earliest last completion
+        leaderboard.sort((a, b) => {
+            if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+            // For same score, earlier completion wins
+            if (a.lastCompletedAt && b.lastCompletedAt) {
+                return new Date(a.lastCompletedAt).getTime() - new Date(b.lastCompletedAt).getTime();
+            }
+            if (a.lastCompletedAt) return -1;
+            if (b.lastCompletedAt) return 1;
+            return 0;
+        });
+
+        res.json({ leaderboard });
+    } catch (error) {
+        console.error('Leaderboard fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch leaderboard.' });
     }
 });
 
@@ -107,7 +266,6 @@ router.post('/team/:teamId/unlock', authenticateAdmin, async (req: Request, res:
             return res.status(400).json({ error: 'Invalid round number.' });
         }
 
-        // Get active session
         const { data: session } = await supabase
             .from('game_sessions')
             .select('id')
@@ -119,13 +277,11 @@ router.post('/team/:teamId/unlock', authenticateAdmin, async (req: Request, res:
             return res.status(404).json({ error: 'No active session for this team.' });
         }
 
-        // Unlock the round
         await supabase
             .from('game_sessions')
             .update({ current_round: round })
             .eq('id', session.id);
 
-        // If unlocking a round, mark previous rounds as complete
         for (let r = 1; r < round; r++) {
             await supabase
                 .from('round_progress')
@@ -150,7 +306,7 @@ router.post('/team/:teamId/unlock', authenticateAdmin, async (req: Request, res:
 // Global timer control
 router.post('/timer', authenticateAdmin, async (req: Request, res: Response) => {
     try {
-        const { action, teamId } = req.body; // 'pause' or 'resume'
+        const { action, teamId } = req.body;
 
         if (!['pause', 'resume'].includes(action)) {
             return res.status(400).json({ error: 'Invalid action. Use pause or resume.' });
@@ -200,16 +356,27 @@ router.get('/export', authenticateAdmin, async (req: Request, res: Response) => 
                     team_name: team.team_name,
                     status: 'not_started',
                     current_round: 0,
+                    r1_score: 0, r2_score: 0, r3_score: 0,
+                    total_score: 0,
                     total_attempts: 0,
                     correct_attempts: 0,
                     time_elapsed: 0
                 };
             }
 
+            const { data: progress } = await supabase
+                .from('round_progress')
+                .select('round_number, points')
+                .eq('session_id', session.id);
+
             const { data: attempts } = await supabase
                 .from('attempts')
                 .select('is_correct')
                 .eq('session_id', session.id);
+
+            const r1 = progress?.find((p: any) => p.round_number === 1)?.points || 0;
+            const r2 = progress?.find((p: any) => p.round_number === 2)?.points || 0;
+            const r3 = progress?.find((p: any) => p.round_number === 3)?.points || 0;
 
             const timeElapsed = session.status === 'completed'
                 ? Math.floor((new Date(session.completed_at || session.expires_at).getTime() -
@@ -220,21 +387,19 @@ router.get('/export', authenticateAdmin, async (req: Request, res: Response) => 
                 team_name: team.team_name,
                 status: session.status,
                 current_round: session.current_round,
+                r1_score: r1, r2_score: r2, r3_score: r3,
+                total_score: r1 + r2 + r3,
                 total_attempts: attempts?.length || 0,
                 correct_attempts: attempts?.filter(a => a.is_correct).length || 0,
                 time_elapsed: timeElapsed
             };
         }));
 
-        // Generate CSV
-        const headers = ['Team Name', 'Status', 'Current Round', 'Total Attempts', 'Correct Attempts', 'Time Elapsed (s)'];
+        const headers = ['Team Name', 'Status', 'Current Round', 'R1 Score', 'R2 Score', 'R3 Score', 'Total Score', 'Total Attempts', 'Correct Attempts', 'Time Elapsed (s)'];
         const rows = results.map(r => [
-            r.team_name,
-            r.status,
-            r.current_round,
-            r.total_attempts,
-            r.correct_attempts,
-            r.time_elapsed
+            r.team_name, r.status, r.current_round,
+            r.r1_score, r.r2_score, r.r3_score, r.total_score,
+            r.total_attempts, r.correct_attempts, r.time_elapsed
         ]);
 
         const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');

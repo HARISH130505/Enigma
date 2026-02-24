@@ -289,6 +289,23 @@ class ApiClient {
         return this.request('/admin/dashboard');
     }
 
+    async createTeam(teamName: string, accessCode: string) {
+        return this.request<{ team: { id: string; name: string; accessCode: string } }>('/admin/teams/create', {
+            method: 'POST',
+            body: JSON.stringify({ teamName, accessCode }),
+        });
+    }
+
+    async deleteTeam(teamId: string) {
+        return this.request(`/admin/teams/${teamId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async getLeaderboard() {
+        return this.request('/admin/leaderboard');
+    }
+
     async exportResults() {
         const response = await fetch(`${this.baseUrl}/admin/export`, {
             headers: {
