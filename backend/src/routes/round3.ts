@@ -5,20 +5,31 @@ import { authenticateTeam, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// Correct answers (from environment)
-const CORRECT_ANSWERS = {
-    key3: process.env.R2_KEY3 || 'VOID',
-    finalCheckpoint: process.env.R3_FINAL_CHECKPOINT || 'ENIGMA-SOLVED'
+// ═══════════════════════════════════════════════════════════════
+// Morse Code Transmissions — Round 3: The Intercepted Transmissions
+// ═══════════════════════════════════════════════════════════════
+
+// Morse code transmission strings (with noise/special char prefixes)
+const TRANSMISSIONS = {
+    question1: {
+        morse: `@..  ^..-.  /  #-.--  $---  %..-  /  &.--.  *---  !...  ~...  +.  =...  /  =9?-  ^  /  @-.--  #- ---  $..-  /  %--  &.-  *-.--  /  ^.  +.  =.-..  /  ?-  ^  /  @-  #.  $--  %.--.  &-  *  /  !-..  ~  /  =  ^-  @---  #  /  $...  %....  &.-  *.-.  !.  /  ~--  +.  =  /  ?  ^  /  @--  #  /  $--.  %  /  &..  *-  !....  /  ~...  +---  =--  ?  /  ^  @.  #---  $-.  %  /  &.  *  /  !..  ~.-..  +...  =.  /  ?-...  ^..-  @-  #  /  $  %  /  &-  *....  !.  /  ~  +--  =---  ?--  /  ^-  @  #  /  $-.--  %---  &..-  /  *-..  !---  /  ~  +..  =  /  ?  ^-.  @---  #  /  $  %.-..  &---  *-.  !--.  /  ~  +.  =.-.  ?  /  ^  @-  #.-.  $..-  %.-..  &-.--  /  *-...  !.  ~.-..  +---  =-.  --.  /  ?  ^-  @  #  /  $-.--  %---  &..-  /  *  !.--  ~....  +.-  =-  /  ?..  ^..`,
+        decodedRiddle: 'If you possess me you may feel tempted to share me with someone else But the moment you do I no longer truly belong to you What am I',
+        answer: 'COFFIN'
+    },
+    question2: {
+        morse: `$*@..  / ^*$* ^....  #.-  $...-  (()%#&%.  /  &-.  *---  !  /  ~--  +---  =..-  -  /  $*)e*?-  ^---  /  !@#$^*(@...  #.--.  $.  %.  &.-  *-.-  /  !-  ~.-  @#^*(^&+-.  =-..  /  %&*)%&?-.  ^---  /  %&(^$^(l@.  #.-  !@#$%^$.  %.-.  &...  /  *-  !---  %&($!~#%&(~....  +.  =.-  !@#$%^?.-.  /  ^-  @.  #  /  $**$#!@#$%^$-.-.  %.  &.-  *-.  /  !.  ~.--.  +.  =.-  #$%%^*(&$-  /  ?.  %&*(^&(*^...-  @.  #.-.  -.--  /  @#$%$--  %.  &.-.  *-..  /  %&(&%$&*!-.--  ~---  +..-  /  ?...  ^.-  @-.--  /  #..  $.  % -..-  %^((%&9&..  *...  -  /  $^*()%$^%&(*!---  ~-.  +.-..  =-.--  /  ?--  ^....  @#$%@.  /  #-.--  !@#$%^&(*&^$---  %..-  /  @#$%)(*&^&-.-.  *.-  !.-..  ~.-..  /  @#$%^(*+---  =..-  -  /  @#$%*&^?  ^  /  @#$%@--  #.  /  #$%^)(*&^$  %.--  &....  *.-  -  /  ?.  ^..  @#$%)(*&^@..`,
+        decodedRiddle: 'I have no mouth to speak and no ears to hear yet I can repeat every word you say I exist only when you call out to me What am I',
+        answer: 'SECRET'
+    },
+    question3: {
+        morse: `@-  ^....  #.  $---  %-.  &.  /  *.--  !....  ~---  +  /  =-.-.  ?.  ^.-.  @.  #.-  $-  %.  &...  /  *--  !.  /  ~-..  +---  =.  ?...  /  ^...  @---  #  /  $.  %-..  &---  *  /  !..-.  ~---  +.  =.-.  /  ?--.  ^.-.  @---  #..-.  $..  %-  /  &.-  *-.  !..  ~-..  +  /  =.-.  ?.  ^...-  @.  #.-.  /  $-.-  %.  &.  *  /  !..  ~.--.  +...  =  /  ?-  ^....  @.  /  #---  $-.  %.  &.  *  /  !.--  ~....  +---  =  /  ?-  ^.--.  @..-  #.-.  $-.-.  %....  &.-  *...  /.  !--  ~.  +  /  =-.-.  ?.  ^.-.  @.  /  #....  $.-  %...  /  &-.  *---  !  /  ~..  +-.  =-  ?.  ^-.  @-..  #-.  /  $---  %-.  &  /  *.  !...-  ~.  +.-.  /  =..-  ?...  ^..  @-.  --.  /  #--  $  /  %.  &-.  *  /  !--  ~-..  +  /  =-.-.  ?.  ^.-.  @.  #  /  $..-.  %..  &-.  *.-  !.  ~.-..  +.-..  =-.--  /  ?..-  ^...  @.  #...  /  $--  %  /  &.--  *..  !.-..  ~.-..  +  /  =-.  ?.  ^...-  @.  #.-.  /  $-.-  %.  &-.  *---  !.--  /  ~..  +  /  =-.  ?.  ^-.-.  @  /  #-.  $---  %  /  &..  *-  /  !.--  ~....  +.-  =-  /  ?..  ^..`,
+        decodedRiddle: 'The one who creates me does so for profit and never keeps me The one who purchases me has no intention of ever using me And the one who finally uses me will never know it What am I',
+        answer: 'ECHO'
+    }
 };
 
-// Morse code mapping
-const MORSE_CODE: { [key: string]: string } = {
-    'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
-    'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
-    'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
-    'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
-    'Y': '-.--', 'Z': '--..', ' ': '/'
-};
+// Final checkpoint — all 3 answers combined
+const FINAL_CHECKPOINT = process.env.R3_FINAL_CHECKPOINT || 'COFFIN-SECRET-ECHO';
 
 // Helper to log attempt
 async function logAttempt(sessionId: string, roundNumber: number, evidenceNumber: number, attemptData: any, isCorrect: boolean) {
@@ -44,34 +55,35 @@ async function checkRound3Access(sessionId: string): Promise<boolean> {
     return session?.current_round >= 3;
 }
 
-// Phase 1: Hexa Vault Filtering and Decoding
+// ═══════════════════════════════════════════════════════════════
+// Phase 1: Transmission 1 — Riddle Answer: COFFIN
+// ═══════════════════════════════════════════════════════════════
 router.post('/phase/1', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
         if (!await checkRound3Access(req.sessionId!)) {
             return res.status(403).json({ error: 'Round 3 is locked.' });
         }
 
-        const { filtered, decoded, keyword } = req.body;
+        const { answer } = req.body;
 
-        if (!keyword) {
-            return res.status(400).json({ error: 'No keyword provided.' });
+        if (!answer) {
+            return res.status(400).json({ error: 'No answer provided.' });
         }
 
-        const isCorrectKeyword = keyword.toUpperCase() === CORRECT_ANSWERS.key3.toUpperCase();
+        const isCorrect = answer.toUpperCase().trim() === TRANSMISSIONS.question1.answer;
 
-        let pointsEarned = 0;
-        if (filtered) pointsEarned += 10;
-        if (decoded) pointsEarned += 10;
-        if (isCorrectKeyword) pointsEarned += 10;
+        await logAttempt(req.sessionId!, 3, 1, { answer }, isCorrect);
 
-        const isComplete = isCorrectKeyword && filtered && decoded;
-
-        await logAttempt(req.sessionId!, 3, 1, { filtered, decoded, keyword }, isComplete);
-
-        const { data: currentProgress } = await supabase.from('round_progress').select('points').eq('session_id', req.sessionId).eq('round_number', 3).single();
+        const { data: currentProgress } = await supabase
+            .from('round_progress')
+            .select('points')
+            .eq('session_id', req.sessionId)
+            .eq('round_number', 3)
+            .single();
         let currentPoints = currentProgress?.points || 0;
 
-        if (isComplete) {
+        if (isCorrect) {
+            const pointsEarned = 15;
             await supabase
                 .from('round_progress')
                 .update({
@@ -83,18 +95,22 @@ router.post('/phase/1', authenticateTeam, async (req: AuthRequest, res: Response
 
             res.json({
                 success: true,
-                message: `HEXA VAULT UNLOCKED. The truth is revealed. (+${pointsEarned} Points)`,
+                message: `TRANSMISSION 1 DECODED. Target identified. (+${pointsEarned} Points)`,
                 accessGranted: true,
                 pointsEarned
             });
         } else {
             const deduction = 5;
             const newPoints = Math.max(0, currentPoints - deduction);
-            await supabase.from('round_progress').update({ points: newPoints }).eq('session_id', req.sessionId).eq('round_number', 3);
+            await supabase
+                .from('round_progress')
+                .update({ points: newPoints })
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 3);
 
             res.json({
                 success: false,
-                message: `DECODING FAILED. Check the hexadecimal translation. (-${deduction} Points)`,
+                message: `DECRYPTION FAILED. Re-examine the intercepted signal. (-${deduction} Points)`,
                 accessGranted: false,
                 pointsDeducted: deduction
             });
@@ -104,7 +120,139 @@ router.post('/phase/1', authenticateTeam, async (req: AuthRequest, res: Response
     }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// Phase 2: Transmission 2 — Riddle Answer: SECRET
+// ═══════════════════════════════════════════════════════════════
+router.post('/phase/2', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        if (!await checkRound3Access(req.sessionId!)) {
+            return res.status(403).json({ error: 'Round 3 is locked.' });
+        }
+
+        const { answer } = req.body;
+
+        if (!answer) {
+            return res.status(400).json({ error: 'No answer provided.' });
+        }
+
+        const isCorrect = answer.toUpperCase().trim() === TRANSMISSIONS.question2.answer;
+
+        await logAttempt(req.sessionId!, 3, 2, { answer }, isCorrect);
+
+        const { data: currentProgress } = await supabase
+            .from('round_progress')
+            .select('points')
+            .eq('session_id', req.sessionId)
+            .eq('round_number', 3)
+            .single();
+        let currentPoints = currentProgress?.points || 0;
+
+        if (isCorrect) {
+            const pointsEarned = 15;
+            await supabase
+                .from('round_progress')
+                .update({
+                    evidence_2_complete: true,
+                    points: currentPoints + pointsEarned
+                } as any)
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 3);
+
+            res.json({
+                success: true,
+                message: `TRANSMISSION 2 DECODED. Intelligence confirmed. (+${pointsEarned} Points)`,
+                accessGranted: true,
+                pointsEarned
+            });
+        } else {
+            const deduction = 5;
+            const newPoints = Math.max(0, currentPoints - deduction);
+            await supabase
+                .from('round_progress')
+                .update({ points: newPoints })
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 3);
+
+            res.json({
+                success: false,
+                message: `DECRYPTION FAILED. Noise interference detected. (-${deduction} Points)`,
+                accessGranted: false,
+                pointsDeducted: deduction
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Validation failed.' });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 3: Transmission 3 — Riddle Answer: ECHO
+// ═══════════════════════════════════════════════════════════════
+router.post('/phase/3', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        if (!await checkRound3Access(req.sessionId!)) {
+            return res.status(403).json({ error: 'Round 3 is locked.' });
+        }
+
+        const { answer } = req.body;
+
+        if (!answer) {
+            return res.status(400).json({ error: 'No answer provided.' });
+        }
+
+        const isCorrect = answer.toUpperCase().trim() === TRANSMISSIONS.question3.answer;
+
+        await logAttempt(req.sessionId!, 3, 3, { answer }, isCorrect);
+
+        const { data: currentProgress } = await supabase
+            .from('round_progress')
+            .select('points')
+            .eq('session_id', req.sessionId)
+            .eq('round_number', 3)
+            .single();
+        let currentPoints = currentProgress?.points || 0;
+
+        if (isCorrect) {
+            const pointsEarned = 15;
+            await supabase
+                .from('round_progress')
+                .update({
+                    evidence_3_complete: true,
+                    points: currentPoints + pointsEarned
+                } as any)
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 3);
+
+            res.json({
+                success: true,
+                message: `TRANSMISSION 3 DECODED. Final coordinates locked. (+${pointsEarned} Points)`,
+                accessGranted: true,
+                pointsEarned
+            });
+        } else {
+            const deduction = 5;
+            const newPoints = Math.max(0, currentPoints - deduction);
+            await supabase
+                .from('round_progress')
+                .update({ points: newPoints })
+                .eq('session_id', req.sessionId)
+                .eq('round_number', 3);
+
+            res.json({
+                success: false,
+                message: `DECRYPTION FAILED. Signal degradation detected. (-${deduction} Points)`,
+                accessGranted: false,
+                pointsDeducted: deduction
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Validation failed.' });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
 // Final Checkpoint: Complete Game
+// ═══════════════════════════════════════════════════════════════
 router.post('/complete', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
         if (!await checkRound3Access(req.sessionId!)) {
@@ -117,12 +265,12 @@ router.post('/complete', authenticateTeam, async (req: AuthRequest, res: Respons
             return res.status(400).json({ error: 'No checkpoint code provided.' });
         }
 
-        const isCorrect = code.toUpperCase() === CORRECT_ANSWERS.finalCheckpoint.toUpperCase();
+        const isCorrect = code.toUpperCase().trim() === FINAL_CHECKPOINT.toUpperCase();
 
         if (!isCorrect) {
             return res.json({
                 success: false,
-                message: 'CHECKPOINT FAILED. The enigma remains unsolved.',
+                message: 'CHECKPOINT FAILED. Combine all three decoded answers (ANS1-ANS2-ANS3).',
                 gameComplete: false
             });
         }
@@ -131,7 +279,6 @@ router.post('/complete', authenticateTeam, async (req: AuthRequest, res: Respons
         await supabase
             .from('round_progress')
             .update({
-                evidence_3_complete: true,
                 escape_code_unlocked: true,
                 completed_at: new Date().toISOString()
             })
@@ -161,7 +308,7 @@ router.post('/complete', authenticateTeam, async (req: AuthRequest, res: Respons
 
         res.json({
             success: true,
-            message: 'ENIGMA SOLVED. Case closed.',
+            message: 'ENIGMA SOLVED. All transmissions decoded. Mission complete.',
             gameComplete: true,
             finalPoints: totalPoints
         });
@@ -170,7 +317,28 @@ router.post('/complete', authenticateTeam, async (req: AuthRequest, res: Respons
     }
 });
 
-// Get Round 3 status
+// ═══════════════════════════════════════════════════════════════
+// Get Transmission Data (Morse strings for the frontend)
+// ═══════════════════════════════════════════════════════════════
+router.get('/transmissions', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        if (!await checkRound3Access(req.sessionId!)) {
+            return res.status(403).json({ error: 'Round 3 is locked.' });
+        }
+
+        res.json({
+            transmission1: { morse: TRANSMISSIONS.question1.morse },
+            transmission2: { morse: TRANSMISSIONS.question2.morse },
+            transmission3: { morse: TRANSMISSIONS.question3.morse }
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch transmissions.' });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Get Round 3 Status
+// ═══════════════════════════════════════════════════════════════
 router.get('/status', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
         const { data: session } = await supabase
@@ -193,44 +361,15 @@ router.get('/status', authenticateTeam, async (req: AuthRequest, res: Response) 
         res.json({
             locked: false,
             phase1: progress?.evidence_1_complete || false,
+            phase2: progress?.evidence_2_complete || false,
+            phase3: progress?.evidence_3_complete || false,
             points: progress?.points || 0,
+            checkpointUnlocked: !!(progress?.evidence_1_complete && progress?.evidence_2_complete && progress?.evidence_3_complete),
             completed: !!progress?.completed_at
         });
     } catch (error) {
         res.status(500).json({ error: 'Status fetch failed.' });
     }
 });
-
-// Levenshtein distance for similarity calculation
-function calculateSimilarity(str1: string, str2: string): number {
-    const len1 = str1.length;
-    const len2 = str2.length;
-
-    if (len1 === 0) return len2 === 0 ? 1 : 0;
-    if (len2 === 0) return 0;
-
-    const matrix: number[][] = [];
-
-    for (let i = 0; i <= len1; i++) {
-        matrix[i] = [i];
-    }
-    for (let j = 0; j <= len2; j++) {
-        matrix[0][j] = j;
-    }
-
-    for (let i = 1; i <= len1; i++) {
-        for (let j = 1; j <= len2; j++) {
-            const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-            matrix[i][j] = Math.min(
-                matrix[i - 1][j] + 1,
-                matrix[i][j - 1] + 1,
-                matrix[i - 1][j - 1] + cost
-            );
-        }
-    }
-
-    const maxLen = Math.max(len1, len2);
-    return (maxLen - matrix[len1][len2]) / maxLen;
-}
 
 export default router;

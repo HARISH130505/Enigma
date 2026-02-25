@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Terminal, Countdown, AccessMessage } from '@/components/ui';
 import api from '@/lib/api';
@@ -8,36 +8,121 @@ import api from '@/lib/api';
 interface RoundStatus {
     locked: boolean;
     phase1: boolean;
+    phase2: boolean;
+    phase3: boolean;
     points: number;
     checkpointUnlocked: boolean;
     completed: boolean;
 }
 
-function HexaVaultPuzzle({
+// ═══════════════════════════════════════════════════════════════
+// Morse Code Reference Table
+// ═══════════════════════════════════════════════════════════════
+const MORSE_REF: { letter: string; code: string }[] = [
+    { letter: 'A', code: '.-' },
+    { letter: 'B', code: '-...' },
+    { letter: 'C', code: '-.-.' },
+    { letter: 'D', code: '-..' },
+    { letter: 'E', code: '.' },
+    { letter: 'F', code: '..-.' },
+    { letter: 'G', code: '--.' },
+    { letter: 'H', code: '....' },
+    { letter: 'I', code: '..' },
+    { letter: 'J', code: '.---' },
+    { letter: 'K', code: '-.-' },
+    { letter: 'L', code: '.-..' },
+    { letter: 'M', code: '--' },
+    { letter: 'N', code: '-.' },
+    { letter: 'O', code: '---' },
+    { letter: 'P', code: '.--.' },
+    { letter: 'Q', code: '--.-' },
+    { letter: 'R', code: '.-.' },
+    { letter: 'S', code: '...' },
+    { letter: 'T', code: '-' },
+    { letter: 'U', code: '..-' },
+    { letter: 'V', code: '...-' },
+    { letter: 'W', code: '.--' },
+    { letter: 'X', code: '-..-' },
+    { letter: 'Y', code: '-.--' },
+    { letter: 'Z', code: '--..' },
+];
+
+function MorseReferenceTable() {
+    const [collapsed, setCollapsed] = useState(true);
+
+    return (
+        <div className="border border-cyber-border rounded-lg overflow-hidden">
+            <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-cyber-darker hover:bg-cyber-dark transition-colors"
+            >
+                <div className="flex items-center gap-2">
+                    <span className="text-cyber-cyan text-sm">📡</span>
+                    <span className="text-cyber-cyan font-mono text-xs font-bold uppercase tracking-wider">
+                        Morse Code Reference Table
+                    </span>
+                </div>
+                <span className="text-cyber-muted text-xs font-mono">
+                    {collapsed ? '▶ EXPAND' : '▼ COLLAPSE'}
+                </span>
+            </button>
+
+            {!collapsed && (
+                <div className="p-4 bg-cyber-darker">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2">
+                        {MORSE_REF.map(({ letter, code }) => (
+                            <div
+                                key={letter}
+                                className="flex flex-col items-center p-2 rounded border border-cyber-border bg-cyber-dark hover:border-cyber-cyan/50 transition-colors"
+                            >
+                                <span className="text-cyber-cyan font-mono text-base font-bold">{letter}</span>
+                                <span className="text-cyber-muted font-mono text-[10px] tracking-wider mt-0.5">{code}</span>
+                            </div>
+                        ))}
+                        <div className="flex flex-col items-center p-2 rounded border border-cyber-yellow/30 bg-cyber-dark">
+                            <span className="text-cyber-yellow font-mono text-[10px] font-bold">SPACE</span>
+                            <span className="text-cyber-yellow font-mono text-[10px] tracking-wider mt-0.5">/</span>
+                        </div>
+                    </div>
+                    <p className="text-cyber-muted text-[10px] font-mono mt-3 text-center">
+                        ⚠ TRANSMISSION NOISE: Special characters before Morse patterns are interference — ignore them. Only dots (.) and dashes (-) are signal.
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Morse Transmission Puzzle Component (reusable for all 3 questions)
+// ═══════════════════════════════════════════════════════════════
+function MorseTransmissionPuzzle({
+    transmissionNumber,
+    morseCode,
+    decodedRiddle,
     onComplete,
-    disabled
+    disabled,
+    submitFn,
 }: {
+    transmissionNumber: number;
+    morseCode: string;
+    decodedRiddle: string;
     onComplete: () => void;
     disabled: boolean;
+    submitFn: (answer: string) => Promise<any>;
 }) {
-    const [steps, setSteps] = useState({ filtered: false, decoded: false });
-    const [keyword, setKeyword] = useState('');
+    const [answer, setAnswer] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    const hexData = "56 4F 49 44"; // VOID
+    const [showRiddle, setShowRiddle] = useState(false);
 
     const handleSubmit = async () => {
-        if (!keyword) return;
+        if (!answer.trim()) return;
         setSubmitting(true);
         setMessage(null);
 
         try {
-            const response = await api.submitRound3Phase1({
-                filtered: steps.filtered,
-                decoded: steps.decoded,
-                keyword: keyword
-            }) as {
+            const response = await submitFn(answer) as {
                 success: boolean;
                 message: string;
                 pointsEarned?: number;
@@ -50,7 +135,7 @@ function HexaVaultPuzzle({
                 setMessage({ type: 'error', text: `${response.message} (-${response.pointsDeducted} Points)` });
             }
         } catch (err) {
-            setMessage({ type: 'error', text: 'Analysis failed.' });
+            setMessage({ type: 'error', text: 'Decryption analysis failed.' });
         } finally {
             setSubmitting(false);
         }
@@ -59,54 +144,84 @@ function HexaVaultPuzzle({
     if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-xl font-mono mb-2">✓ VAULT DATA DECRYPTED</div>
-                <p className="text-cyber-muted text-sm">Key 3 successfully extracted</p>
+                <div className="text-cyber-green text-xl font-mono mb-2">✓ TRANSMISSION {transmissionNumber} DECODED</div>
+                <p className="text-cyber-muted text-sm">Signal successfully decrypted and analyzed</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-6">
+            {/* Mission Brief */}
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
-                <p className="text-cyber-muted text-sm font-mono mb-6">
-                    Analyze the encrypted hexadecimal data. Filter the noise, decode the characters, and extract the 4-letter keyword.
+                <div className="flex items-center gap-2 mb-3">
+                    <span className="text-cyber-red animate-pulse">●</span>
+                    <h3 className="text-cyber-cyan font-mono text-sm font-bold uppercase">
+                        Intercepted Transmission #{transmissionNumber}
+                    </h3>
+                </div>
+                <p className="text-cyber-muted text-xs font-mono leading-relaxed">
+                    An encoded enemy transmission has been captured. Decode the Morse signal below,
+                    filtering out noise characters (only <span className="text-cyber-cyan font-bold">dots (.)</span> and{' '}
+                    <span className="text-cyber-cyan font-bold">dashes (-)</span> are valid Morse).
+                    The <span className="text-cyber-yellow font-bold">/</span> character separates words.
+                    Once decoded, solve the riddle to identify the target.
                 </p>
+            </div>
 
-                <div className="bg-cyber-darker rounded border border-cyber-border p-8 mb-6 text-center">
-                    <div className="text-xs text-cyber-muted mb-2 font-mono uppercase tracking-widest">Encrypted Stream</div>
-                    <div className="text-4xl font-mono text-cyber-cyan tracking-[0.5em] animate-pulse">
-                        {hexData}
+            {/* Morse Code Display */}
+            <div className="bg-cyber-darker rounded border border-cyber-border p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="text-[10px] text-cyber-red font-mono uppercase tracking-widest flex items-center gap-2">
+                        <span className="animate-pulse">●</span> ENCRYPTED SIGNAL — TRANSMISSION {transmissionNumber}
+                    </div>
+                    <div className="text-[10px] text-cyber-muted font-mono">
+                        FREQ: {(137.5 + transmissionNumber * 12.3).toFixed(1)} MHz
                     </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <label className="flex items-center gap-3 cursor-pointer p-3 border border-cyber-border rounded hover:bg-cyber-cyan/5 transition-colors">
-                        <input type="checkbox" checked={steps.filtered} onChange={() => setSteps({ ...steps, filtered: !steps.filtered })} className="hidden" />
-                        <span className={`w-4 h-4 border ${steps.filtered ? 'bg-cyber-cyan shadow-[0_0_10px_rgba(0,255,255,0.5)]' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted uppercase font-bold tracking-tighter">Filter Noise</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer p-3 border border-cyber-border rounded hover:bg-cyber-cyan/5 transition-colors">
-                        <input type="checkbox" checked={steps.decoded} onChange={() => setSteps({ ...steps, decoded: !steps.decoded })} className="hidden" />
-                        <span className={`w-4 h-4 border ${steps.decoded ? 'bg-cyber-cyan shadow-[0_0_10px_rgba(0,255,255,0.5)]' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted uppercase font-bold tracking-tighter">Decode ASCII</span>
-                    </label>
+                <div className="bg-[#0a0e14] rounded border border-cyber-border p-4 max-h-48 overflow-y-auto">
+                    <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
+                        {morseCode}
+                    </pre>
                 </div>
+            </div>
 
-                <div className="bg-cyber-darker rounded border border-cyber-border p-3 mb-6">
-                    <div className="text-[10px] text-cyber-muted mb-2 font-mono">ASCII_REF:</div>
-                    <div className="grid grid-cols-4 gap-2 font-mono text-[9px] text-cyber-muted">
-                        <span className="text-cyber-cyan">56:V</span><span className="text-cyber-cyan">4F:O</span><span className="text-cyber-cyan">49:I</span><span className="text-cyber-cyan">44:D</span>
-                        <span>48:H</span><span>41:A</span><span>43:C</span><span>4B:K</span>
+            {/* Morse Reference Table */}
+            <MorseReferenceTable />
+
+            {/* Decoded Riddle (toggle reveal) */}
+            <div className="bg-cyber-dark rounded border border-cyber-cyan/30 p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-cyber-cyan font-mono text-xs font-bold uppercase tracking-wider">
+                        📜 Decoded Message (Riddle)
+                    </span>
+                    <button
+                        onClick={() => setShowRiddle(!showRiddle)}
+                        className="px-3 py-1 rounded font-mono text-[10px] font-bold uppercase bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30 hover:bg-cyber-cyan/20 transition-all"
+                    >
+                        {showRiddle ? 'HIDE' : 'REVEAL'}
+                    </button>
+                </div>
+                {showRiddle && (
+                    <div className="bg-[#0a0e14] rounded border border-cyber-border p-4">
+                        <p className="text-cyber-text font-mono text-sm leading-relaxed italic">
+                            &quot;{decodedRiddle}&quot;
+                        </p>
                     </div>
-                </div>
+                )}
+            </div>
 
+            {/* Answer Input */}
+            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
+                <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
+                    Riddle Answer — Transmission {transmissionNumber}
+                </label>
                 <input
                     type="text"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value.toUpperCase())}
-                    placeholder="KEYWORD (4 CHARS)"
-                    className="input-cyber text-center text-2xl font-bold tracking-[0.3em]"
-                    maxLength={4}
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value.toUpperCase())}
+                    placeholder="ENTER THE ANSWER"
+                    className="input-cyber text-center text-lg w-full tracking-widest"
                 />
             </div>
 
@@ -118,16 +233,18 @@ function HexaVaultPuzzle({
 
             <button
                 onClick={handleSubmit}
-                disabled={!keyword || submitting}
+                disabled={!answer.trim() || submitting}
                 className="btn-neon w-full"
             >
-                {submitting ? 'PROCESSING...' : 'UNBOLT HEXA VAULT'}
+                {submitting ? 'DECRYPTING...' : `DECODE TRANSMISSION ${transmissionNumber}`}
             </button>
         </div>
     );
 }
 
+// ═══════════════════════════════════════════════════════════════
 // Final Checkpoint Component
+// ═══════════════════════════════════════════════════════════════
 function FinalCheckpointPuzzle({
     onComplete,
     disabled,
@@ -168,9 +285,9 @@ function FinalCheckpointPuzzle({
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center shadow-[0_0_15px_rgba(0,255,136,0.1)]">
                 <div className="text-4xl mb-4">✅</div>
-                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">MASTER KEY VERIFIED</div>
+                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">MISSION COMPLETE</div>
                 <p className="text-cyber-green/70 text-sm font-mono tracking-tighter">
-                    Mole identified. Mission complete.
+                    All transmissions decoded. Target location confirmed.
                 </p>
             </div>
         );
@@ -180,9 +297,9 @@ function FinalCheckpointPuzzle({
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-border text-center">
                 <div className="text-4xl mb-4">🔒</div>
-                <h3 className="text-xl font-orbitron text-cyber-muted mb-2 uppercase tracking-widest">Master Key Locked</h3>
+                <h3 className="text-xl font-orbitron text-cyber-muted mb-2 uppercase tracking-widest">Final Checkpoint Locked</h3>
                 <p className="text-cyber-muted text-xs font-mono">
-                    Decrypt the vault first to reveal the master key.
+                    Decode all three transmissions to unlock the final checkpoint.
                 </p>
             </div>
         );
@@ -193,9 +310,9 @@ function FinalCheckpointPuzzle({
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-cyan shadow-[0_0_20px_rgba(0,255,255,0.1)]">
                 <div className="text-center mb-6">
                     <div className="text-4xl mb-4">🗝️</div>
-                    <h3 className="text-xl font-orbitron text-cyber-cyan mb-2">MASTER KEY REQUIRED</h3>
+                    <h3 className="text-xl font-orbitron text-cyber-cyan mb-2">FINAL TRANSMISSION CODE</h3>
                     <p className="text-cyber-muted text-sm font-mono tracking-tighter">
-                        Combine all three keys: (Key1)-(Key2)-(Key3)
+                        Combine all three decoded answers: (ANSWER1)-(ANSWER2)-(ANSWER3)
                     </p>
                 </div>
 
@@ -204,7 +321,7 @@ function FinalCheckpointPuzzle({
                         type="text"
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase())}
-                        placeholder="X-FILE-XXX-XXXX"
+                        placeholder="ANS1-ANS2-ANS3"
                         className="input-cyber flex-1 text-center text-lg tracking-widest"
                     />
                     <button
@@ -226,13 +343,36 @@ function FinalCheckpointPuzzle({
     );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Transmission Data (Morse strings + decoded riddles)
+// ═══════════════════════════════════════════════════════════════
+const TRANSMISSION_DATA = [
+    {
+        num: 1,
+        morse: `@..  ^..-.  /  #-.--  $---  %..-  /  &.--.  *---  !...  ~...  +.  =...  /  =9?-  ^  /  @-.--  #- ---  $..-  /  %--  &.-  *-.--  /  ^.  +.  =.-..  /  ?-  ^  /  @-  #.  $--  %.--.  &-  *  /  !-..  ~  /  =  ^-  @---  #  /  $...  %....  &.-  *.-.  !.  /  ~--  +.  =  /  ?  ^  /  @--  #  /  $--.  %  /  &..  *-  !....  /  ~...  +---  =--  ?  /  ^  @.  #---  $-.  %  /  &.  *  /  !..  ~.-..  +...  =.  /  ?-...  ^..-  @-  #  /  $  %  /  &-  *....  !.  /  ~  +--  =---  ?--  /  ^-  @  #  /  $-.--  %---  &..-  /  *-..  !---  /  ~  +..  =  /  ?  ^-.  @---  #  /  $  %.-..  &---  *-.  !--.  /  ~  +.  =.-.  ?  /  ^  @-  #.-.  $..-  %.-..  &-.--  /  *-...  !.  ~.-..  +---  =-.  --.  /  ?  ^-  @  #  /  $-.--  %---  &..-  /  *  !.--  ~....  +.-  =-  /  ?..  ^..`,
+        decodedRiddle: 'If you possess me you may feel tempted to share me with someone else But the moment you do I no longer truly belong to you What am I',
+    },
+    {
+        num: 2,
+        morse: `$*@..  / ^*$* ^....  #.-  $...-  (()%#&%.  /  &-.  *---  !  /  ~--  +---  =..-  -  /  $*)e*?-  ^---  /  !@#$^*(@...  #.--.  $.  %.  &.-  *-.-  /  !-  ~.-  @#^*(^&+-.  =-..  /  %&*)%&?-.  ^---  /  %&(^$^(l@.  #.-  !@#$%^$.  %.-.  &...  /  *-  !---  %&($!~#%&(~....  +.  =.-  !@#$%^?.-.  /  ^-  @.  #  /  $**$#!@#$%^$-.-.  %.  &.-  *-.  /  !.  ~.--.  +.  =.-  #$%%^*(&$-  /  ?.  %&*(^&(*^...-  @.  #.-.  -.--  /  @#$%$--  %.  &.-.  *-..  /  %&(&%$&*!-.--  ~---  +..-  /  ?...  ^.-  @-.--  /  #..  $.  % -..-  %^((%&9&..  *...  -  /  $^*()%$^%&(*!---  ~-.  +.-..  =-.--  /  ?--  ^....  @#$%@.  /  #-.--  !@#$%^&(*&^$---  %..-  /  @#$%)(*&^&-.-.  *.-  !.-..  ~.-..  /  @#$%^(*+---  =..-  -  /  @#$%*&^?  ^  /  @#$%@--  #.  /  #$%^)(*&^$  %.--  &....  *.-  -  /  ?.  ^..  @#$%)(*&^@..`,
+        decodedRiddle: 'I have no mouth to speak and no ears to hear yet I can repeat every word you say I exist only when you call out to me What am I',
+    },
+    {
+        num: 3,
+        morse: `@-  ^....  #.  $---  %-.  &.  /  *.--  !....  ~---  +  /  =-.-.  ?.  ^.-.  @.  #.-  $-  %.  &...  /  *--  !.  /  ~-..  +---  =.  ?...  /  ^...  @---  #  /  $.  %-..  &---  *  /  !..-.  ~---  +.  =.-.  /  ?--.  ^.-.  @---  #..-.  $..  %-  /  &.-  *-.  !..  ~-..  +  /  =.-.  ?.  ^...-  @.  #.-.  /  $-.-  %.  &.  *  /  !..  ~.--.  +...  =  /  ?-  ^....  @.  /  #---  $-.  %.  &.  *  /  !.--  ~....  +---  =  /  ?-  ^.--.  @..-  #.-.  $-.-.  %....  &.-  *...  /.  !--  ~.  +  /  =-.-.  ?.  ^.-.  @.  /  #....  $.-  %...  /  &-.  *---  !  /  ~..  +-.  =-  ?.  ^-.  @-..  #-.  /  $---  %-.  &  /  *.  !...-  ~.  +.-.  /  =..-  ?...  ^..  @-.  --.  /  #--  $  /  %.  &-.  *  /  !--  ~-..  +  /  =-.-.  ?.  ^.-.  @.  #  /  $..-.  %..  &-.  *.-  !.  ~.-..  +.-..  =-.--  /  ?..-  ^...  @.  #...  /  $--  %  /  &.--  *..  !.-..  ~.-..  +  /  =-.  ?.  ^...-  @.  #.-.  /  $-.-  %.  &-.  *---  !.--  /  ~..  +  /  =-.  ?.  ^-.-.  @  /  #-.  $---  %  /  &..  *-  /  !.--  ~....  +.-  =-  /  ?..  ^..`,
+        decodedRiddle: 'The one who creates me does so for profit and never keeps me The one who purchases me has no intention of ever using me And the one who finally uses me will never know it What am I',
+    },
+];
+
+// ═══════════════════════════════════════════════════════════════
 // Main Round 3 Page
+// ═══════════════════════════════════════════════════════════════
 export default function Round3Page() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<RoundStatus | null>(null);
     const [expiresAt, setExpiresAt] = useState<string | null>(null);
-    const [activeStep, setActiveStep] = useState<number>(1);
+    const [activePhase, setActivePhase] = useState<number>(1);
     const [showAccessMessage, setShowAccessMessage] = useState<{ type: 'granted' | 'denied'; message: string } | null>(null);
 
     const fetchStatus = useCallback(async () => {
@@ -258,19 +398,19 @@ export default function Round3Page() {
         fetchStatus().finally(() => setLoading(false));
     }, [fetchStatus]);
 
-    const handleStepComplete = (stepNum: number) => {
-        setShowAccessMessage({ type: 'granted', message: `Step ${stepNum} Complete` });
+    const handlePhaseComplete = (phaseNum: number) => {
+        setShowAccessMessage({ type: 'granted', message: `Transmission ${phaseNum} Decoded!` });
         setTimeout(() => {
             setShowAccessMessage(null);
             fetchStatus();
-            if (stepNum < 2) {
-                setActiveStep(stepNum + 1);
+            if (phaseNum < 3) {
+                setActivePhase(phaseNum + 1);
             }
         }, 2000);
     };
 
     const handleMissionComplete = () => {
-        setShowAccessMessage({ type: 'granted', message: 'MISSION COMPLETE!' });
+        setShowAccessMessage({ type: 'granted', message: 'ALL TRANSMISSIONS DECODED — MISSION COMPLETE!' });
         setTimeout(() => {
             router.push('/finale');
         }, 2500);
@@ -281,15 +421,23 @@ export default function Round3Page() {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="loader mx-auto mb-4" />
-                    <p className="text-cyber-muted font-mono">Tuning into the signal...</p>
+                    <p className="text-cyber-muted font-mono">Tuning into intercepted frequencies...</p>
                 </div>
             </div>
         );
     }
 
-    const steps = [
-        { num: 1, title: 'Hexa Vault Decryption', complete: status?.phase1 },
-        { num: 2, title: 'Final Master Key', complete: status?.completed },
+    const submitFns = [
+        (a: string) => api.submitRound3Phase1(a),
+        (a: string) => api.submitRound3Phase2(a),
+        (a: string) => api.submitRound3Phase3(a),
+    ];
+
+    const phases = [
+        { num: 1, title: 'Transmission 1', complete: status?.phase1 },
+        { num: 2, title: 'Transmission 2', complete: status?.phase2 },
+        { num: 3, title: 'Transmission 3', complete: status?.phase3 },
+        { num: 4, title: 'Final Checkpoint', complete: status?.completed },
     ];
 
     return (
@@ -312,7 +460,7 @@ export default function Round3Page() {
                         ← BACK TO DASHBOARD
                     </button>
                     <h1 className="text-3xl font-orbitron font-bold text-cyber-cyan tracking-tighter uppercase">
-                        ROUND 3: <span className="text-cyber-text">THE HEXA VAULT</span>
+                        ROUND 3: <span className="text-cyber-text">THE INTERCEPTED TRANSMISSIONS</span>
                     </h1>
                 </div>
 
@@ -344,29 +492,29 @@ export default function Round3Page() {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Step Tabs */}
+                {/* Phase Tabs */}
                 <div className="lg:col-span-1">
                     <div className="card-cyber">
-                        <h2 className="text-lg font-orbitron font-bold text-cyber-text mb-4">STEPS</h2>
+                        <h2 className="text-lg font-orbitron font-bold text-cyber-text mb-4">TRANSMISSIONS</h2>
                         <div className="space-y-2">
-                            {steps.map((step) => (
+                            {phases.map((phase) => (
                                 <button
-                                    key={step.num}
-                                    onClick={() => setActiveStep(step.num)}
+                                    key={phase.num}
+                                    onClick={() => setActivePhase(phase.num)}
                                     className={`
                                         w-full p-4 rounded-lg border text-left transition-all font-mono text-sm relative
-                                        ${activeStep === step.num
+                                        ${activePhase === phase.num
                                             ? 'border-cyber-cyan bg-cyber-cyan/10 text-cyber-cyan'
-                                            : step.complete
+                                            : phase.complete
                                                 ? 'border-cyber-green bg-cyber-green/5 text-cyber-green'
                                                 : 'border-cyber-border hover:border-cyber-blue text-cyber-muted'}
                                     `}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-2 h-2 rounded-full ${step.complete ? 'bg-cyber-green' : 'bg-current opacity-30'} group-hover:animate-pulse`} />
-                                        <span>{step.title}</span>
+                                        <div className={`w-2 h-2 rounded-full ${phase.complete ? 'bg-cyber-green' : 'bg-current opacity-30'}`} />
+                                        <span>{phase.title}</span>
                                     </div>
-                                    {step.complete && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg">✓</span>}
+                                    {phase.complete && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg">✓</span>}
                                 </button>
                             ))}
                         </div>
@@ -377,13 +525,25 @@ export default function Round3Page() {
                         <h2 className="text-lg font-orbitron font-bold text-cyber-text mb-4">MISSION STATUS</h2>
                         <div className="space-y-2 text-sm font-mono">
                             <div className="flex items-center justify-between">
-                                <span className="text-cyber-muted">Vault State</span>
+                                <span className="text-cyber-muted">Signal 1</span>
                                 <span className={status?.phase1 ? 'text-cyber-green' : 'text-cyber-muted'}>
-                                    {status?.phase1 ? 'DECRYPTED' : 'LOCKED'}
+                                    {status?.phase1 ? 'DECODED' : 'ENCRYPTED'}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-cyber-muted">Master Key</span>
+                                <span className="text-cyber-muted">Signal 2</span>
+                                <span className={status?.phase2 ? 'text-cyber-green' : 'text-cyber-muted'}>
+                                    {status?.phase2 ? 'DECODED' : 'ENCRYPTED'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-cyber-muted">Signal 3</span>
+                                <span className={status?.phase3 ? 'text-cyber-green' : 'text-cyber-muted'}>
+                                    {status?.phase3 ? 'DECODED' : 'ENCRYPTED'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between border-t border-cyber-border pt-2 mt-2">
+                                <span className="text-cyber-muted">Checkpoint</span>
                                 <span className={status?.completed ? 'text-cyber-green' : 'text-cyber-muted'}>
                                     {status?.completed ? 'VERIFIED' : 'PENDING'}
                                 </span>
@@ -392,30 +552,41 @@ export default function Round3Page() {
                     </div>
                 </div>
 
-                {/* Active Step Panel */}
+                {/* Active Phase Panel */}
                 <div className="lg:col-span-3">
                     <div className="card-cyber">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-orbitron font-bold text-cyber-text">
-                                STEP {activeStep}: {steps[activeStep - 1].title}
+                                {phases[activePhase - 1].title.toUpperCase()}
                             </h2>
-                            {steps[activeStep - 1].complete && (
+                            {phases[activePhase - 1].complete && (
                                 <span className="badge badge-complete">COMPLETE</span>
                             )}
                         </div>
 
-                        {activeStep === 1 && (
-                            <HexaVaultPuzzle
-                                onComplete={() => handleStepComplete(1)}
-                                disabled={status?.phase1 || false}
+                        {/* Transmission Phases 1-3 */}
+                        {activePhase >= 1 && activePhase <= 3 && (
+                            <MorseTransmissionPuzzle
+                                key={activePhase}
+                                transmissionNumber={TRANSMISSION_DATA[activePhase - 1].num}
+                                morseCode={TRANSMISSION_DATA[activePhase - 1].morse}
+                                decodedRiddle={TRANSMISSION_DATA[activePhase - 1].decodedRiddle}
+                                onComplete={() => handlePhaseComplete(activePhase)}
+                                disabled={
+                                    activePhase === 1 ? (status?.phase1 || false) :
+                                        activePhase === 2 ? (status?.phase2 || false) :
+                                            (status?.phase3 || false)
+                                }
+                                submitFn={submitFns[activePhase - 1]}
                             />
                         )}
 
-                        {activeStep === 2 && (
+                        {/* Final Checkpoint */}
+                        {activePhase === 4 && (
                             <FinalCheckpointPuzzle
                                 onComplete={handleMissionComplete}
                                 disabled={status?.completed || false}
-                                locked={!status?.phase1}
+                                locked={!status?.checkpointUnlocked}
                             />
                         )}
                     </div>
@@ -423,16 +594,17 @@ export default function Round3Page() {
                     {/* Terminal Output */}
                     <div className="mt-6">
                         <Terminal
-                            title="SIGNAL_ANALYSIS"
+                            title="SIGNAL_INTERCEPT"
                             lines={[
-                                { type: 'prompt', text: 'Initializing vault bypass...' },
-                                { type: 'output', text: `[STAGE 1] Hex Decryption: ${status?.phase1 ? 'STABLE' : 'LOCKED'}` },
-                                { type: 'output', text: `[STAGE 2] Master Key: ${status?.completed ? 'VERIFIED' : 'AWAITING'}` },
+                                { type: 'prompt', text: 'Initializing signal intercept array...' },
+                                { type: 'output', text: `[SIGNAL 1] Transmission: ${status?.phase1 ? 'DECODED' : 'ENCRYPTED'}` },
+                                { type: 'output', text: `[SIGNAL 2] Transmission: ${status?.phase2 ? 'DECODED' : 'ENCRYPTED'}` },
+                                { type: 'output', text: `[SIGNAL 3] Transmission: ${status?.phase3 ? 'DECODED' : 'ENCRYPTED'}` },
                                 {
                                     type: status?.completed ? 'success' : 'output',
                                     text: status?.completed
-                                        ? '>>> VAULT BYPASSED - DOWNLOAD ENIGMA_LEAK.PDF <<<'
-                                        : '[SECURE] Complete all stages to finalize breach'
+                                        ? '>>> ALL SIGNALS DECODED — TARGET LOCATION CONFIRMED <<<'
+                                        : '[SECURE] Decode all transmissions to identify target location'
                                 },
                             ]}
                         />

@@ -236,16 +236,34 @@ class ApiClient {
         });
     }
 
-    // Round 3 endpoints (The Hexa Vault)
-    async submitRound3Phase1(data: {
-        filtered: boolean;
-        decoded: boolean;
-        keyword: string;
-    }) {
+    // Round 3 endpoints (The Intercepted Transmissions)
+    async submitRound3Phase1(answer: string) {
         return this.request('/round3/phase/1', {
             method: 'POST',
-            body: JSON.stringify(data),
+            body: JSON.stringify({ answer }),
         });
+    }
+
+    async submitRound3Phase2(answer: string) {
+        return this.request('/round3/phase/2', {
+            method: 'POST',
+            body: JSON.stringify({ answer }),
+        });
+    }
+
+    async submitRound3Phase3(answer: string) {
+        return this.request('/round3/phase/3', {
+            method: 'POST',
+            body: JSON.stringify({ answer }),
+        });
+    }
+
+    async getRound3Transmissions() {
+        return this.request<{
+            transmission1: { morse: string };
+            transmission2: { morse: string };
+            transmission3: { morse: string };
+        }>('/round3/transmissions');
     }
 
     async submitRound3Complete(code: string) {
