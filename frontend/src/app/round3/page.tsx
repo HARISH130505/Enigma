@@ -232,7 +232,7 @@ function MorseTransmissionPuzzle({
                             onChange={(e) => setRiddleInput(e.target.value)}
                             placeholder="Type the decoded message here..."
                             rows={3}
-                            className="w-full bg-[#0a0e14] text-cyber-text font-mono text-sm p-3 rounded border border-cyber-border focus:border-cyber-cyan focus:outline-none resize-y placeholder:text-[#555]"
+                            className="w-full bg-[#0a0e14] text-cyber-text text-white font-mono text-sm p-3 rounded border border-cyber-border focus:border-cyber-cyan focus:outline-none resize-y placeholder:text-[#555]"
                         />
 
                         {riddleMessage && (
