@@ -215,10 +215,10 @@ function MorseTransmissionPuzzle({
             <div className={`p-4 rounded border ${riddleVerified ? 'bg-cyber-dark border-cyber-green' : 'bg-cyber-dark border-cyber-cyan/30'}`}>
                 <div className="flex items-center gap-2 mb-3">
                     <span className={`text-sm font-mono font-bold px-2 py-0.5 rounded ${riddleVerified ? 'bg-cyber-green/20 text-cyber-green' : 'bg-cyber-cyan/20 text-cyber-cyan'}`}>
-                        STEP 1
+                        STEP 1:
                     </span>
                     <span className="text-cyber-muted font-mono text-xs uppercase tracking-wider">
-                        {riddleVerified ? '✓ Decoded Message Verified' : ' Enter the Decoded Message'}
+                        {riddleVerified ? '✓ Decoded Message Verified' : 'Enter the Decoded Message'}
                     </span>
                 </div>
 
@@ -232,7 +232,8 @@ function MorseTransmissionPuzzle({
                             onChange={(e) => setRiddleInput(e.target.value)}
                             placeholder="Type the decoded message here..."
                             rows={3}
-                            className="w-full bg-[#0a0e14] text-cyber-text text-white font-mono text-sm p-3 rounded border border-cyber-border focus:border-cyber-cyan focus:outline-none resize-y placeholder:text-[#555]"
+                            className="w-full bg-[#0a0e14] font-mono text-sm p-3 rounded border border-cyber-border focus:border-cyber-cyan focus:outline-none resize-y placeholder:text-[#555]"
+                            style={{ color: '#ffffff' }}
                         />
 
                         {riddleMessage && (
@@ -544,6 +545,36 @@ export default function Round3Page() {
                     </button>
                 </div>
             </header>
+
+            {/* WWII Narrative Briefing */}
+            <div className="mb-8 p-6 bg-cyber-darker rounded-lg border border-cyber-red/30 shadow-[0_0_20px_rgba(255,50,50,0.05)]">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-cyber-red animate-pulse text-lg">●</span>
+                    <h2 className="text-cyber-red font-orbitron font-bold text-sm uppercase tracking-widest">CLASSIFIED — WAR ROOM BRIEFING</h2>
+                </div>
+                <div className="text-cyber-muted font-mono text-xs leading-relaxed space-y-3">
+                    <p>
+                        In the midst of <span className="text-cyber-text font-bold">World War II</span>, a secret military bunker intercepts an <span className="text-cyber-red font-bold">urgent enemy transmission</span>. The message is short. Encrypted. Written entirely in Morse code.
+                    </p>
+                    <p>
+                        Intelligence officers gather around a dimly lit war table. <span className="text-cyber-cyan font-bold">Every second matters.</span>
+                    </p>
+                    <p>
+                        The decoded message is believed to reveal the <span className="text-cyber-yellow font-bold">exact location of a planned bombing</span>. If the code is broken in time, disaster can be prevented.
+                    </p>
+                    <p>
+                        <span className="text-cyber-text font-bold">Three separate transmissions</span> have been captured.
+                        Each one contains a <span className="text-cyber-cyan font-bold">critical question</span>.
+                        Each correct answer brings the officers closer to identifying the target location.
+                    </p>
+                    <p className="text-cyber-red font-bold">
+                        Failure is not an option.
+                    </p>
+                    <p className="text-cyber-cyan">
+                        You are the codebreaking unit. Your mission is to decode the Morse signals, uncover the hidden questions, and determine the correct answers before time runs out.
+                    </p>
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Phase Tabs */}
