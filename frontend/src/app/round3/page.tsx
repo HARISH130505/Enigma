@@ -218,7 +218,7 @@ function MorseTransmissionPuzzle({
                         STEP 1
                     </span>
                     <span className="text-cyber-muted font-mono text-xs uppercase tracking-wider">
-                        {riddleVerified ? '✓ Decoded Message Verified' : 'Enter the Decoded Message'}
+                        {riddleVerified ? '✓ Decoded Message Verified' : ' Enter the Decoded Message'}
                     </span>
                 </div>
 
