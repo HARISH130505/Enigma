@@ -69,22 +69,22 @@ function MorseReferenceTable() {
 
             {!collapsed && (
                 <div className="p-4 bg-cyber-darker">
-                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-3">
                         {MORSE_REF.map(({ letter, code }) => (
                             <div
                                 key={letter}
-                                className="flex flex-col items-center p-2 rounded border border-cyber-border bg-cyber-dark hover:border-cyber-cyan/50 transition-colors"
+                                className="flex flex-col items-center p-3 rounded border border-cyber-border bg-cyber-dark hover:border-cyber-cyan/50 transition-colors"
                             >
-                                <span className="text-cyber-cyan font-mono text-base font-bold">{letter}</span>
-                                <span className="text-cyber-muted font-mono text-[10px] tracking-wider mt-0.5">{code}</span>
+                                <span className="text-cyber-cyan font-mono text-lg font-bold">{letter}</span>
+                                <span className="text-cyber-muted font-mono text-sm tracking-wider mt-1">{code}</span>
                             </div>
                         ))}
-                        <div className="flex flex-col items-center p-2 rounded border border-cyber-yellow/30 bg-cyber-dark">
-                            <span className="text-cyber-yellow font-mono text-[10px] font-bold">SPACE</span>
-                            <span className="text-cyber-yellow font-mono text-[10px] tracking-wider mt-0.5">/</span>
+                        <div className="flex flex-col items-center p-3 rounded border border-cyber-yellow/30 bg-cyber-dark">
+                            <span className="text-cyber-yellow font-mono text-sm font-bold">SPACE</span>
+                            <span className="text-cyber-yellow font-mono text-sm tracking-wider mt-1">/</span>
                         </div>
                     </div>
-                    <p className="text-cyber-muted text-[10px] font-mono mt-3 text-center">
+                    <p className="text-cyber-muted text-xs font-mono mt-3 text-center">
                         ⚠ TRANSMISSION NOISE: Special characters before Morse patterns are interference — ignore them. Only dots (.) and dashes (-) are signal.
                     </p>
                 </div>
@@ -111,12 +111,34 @@ function MorseTransmissionPuzzle({
     disabled: boolean;
     submitFn: (answer: string) => Promise<any>;
 }) {
+    const [riddleInput, setRiddleInput] = useState('');
+    const [riddleVerified, setRiddleVerified] = useState(false);
     const [answer, setAnswer] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [showRiddle, setShowRiddle] = useState(false);
+    const [riddleMessage, setRiddleMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const handleSubmit = async () => {
+    // Normalize text for comparison: lowercase, strip punctuation, collapse whitespace
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+
+    const handleVerifyRiddle = () => {
+        const input = normalize(riddleInput);
+        const expected = normalize(decodedRiddle);
+        // Check similarity — allow minor typos by checking if at least 90% of words match
+        const inputWords = input.split(' ');
+        const expectedWords = expected.split(' ');
+        const matchCount = expectedWords.filter(w => inputWords.includes(w)).length;
+        const similarity = matchCount / expectedWords.length;
+
+        if (similarity >= 0.85) {
+            setRiddleVerified(true);
+            setRiddleMessage({ type: 'success', text: '✓ DECODED MESSAGE VERIFIED — Now solve the riddle below.' });
+        } else {
+            setRiddleMessage({ type: 'error', text: 'DECODE MISMATCH — The decoded message does not match. Re-examine the Morse signal.' });
+        }
+    };
+
+    const handleSubmitAnswer = async () => {
         if (!answer.trim()) return;
         setSubmitting(true);
         setMessage(null);
@@ -161,11 +183,11 @@ function MorseTransmissionPuzzle({
                     </h3>
                 </div>
                 <p className="text-cyber-muted text-xs font-mono leading-relaxed">
-                    An encoded enemy transmission has been captured. Decode the Morse signal below,
-                    filtering out noise characters (only <span className="text-cyber-cyan font-bold">dots (.)</span> and{' '}
-                    <span className="text-cyber-cyan font-bold">dashes (-)</span> are valid Morse).
-                    The <span className="text-cyber-yellow font-bold">/</span> character separates words.
-                    Once decoded, solve the riddle to identify the target.
+                    An encoded enemy transmission has been captured. <span className="text-cyber-cyan font-bold">Step 1:</span> Decode the Morse signal below
+                    (filter noise characters — only <span className="text-cyber-cyan font-bold">dots (.)</span> and{' '}
+                    <span className="text-cyber-cyan font-bold">dashes (-)</span> are valid Morse,{' '}
+                    <span className="text-cyber-yellow font-bold">/</span> separates words).
+                    Enter the decoded message to verify. <span className="text-cyber-cyan font-bold">Step 2:</span> Solve the riddle and submit the answer.
                 </p>
             </div>
 
@@ -189,21 +211,46 @@ function MorseTransmissionPuzzle({
             {/* Morse Reference Table */}
             <MorseReferenceTable />
 
-            {/* Decoded Riddle (toggle reveal) */}
-            <div className="bg-cyber-dark rounded border border-cyber-cyan/30 p-4">
-                <div className="flex items-center justify-between mb-3">
-                    <span className="text-cyber-cyan font-mono text-xs font-bold uppercase tracking-wider">
-                        📜 Decoded Message (Riddle)
+            {/* STEP 1: Decode the riddle */}
+            <div className={`p-4 rounded border ${riddleVerified ? 'bg-cyber-dark border-cyber-green' : 'bg-cyber-dark border-cyber-cyan/30'}`}>
+                <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-sm font-mono font-bold px-2 py-0.5 rounded ${riddleVerified ? 'bg-cyber-green/20 text-cyber-green' : 'bg-cyber-cyan/20 text-cyber-cyan'}`}>
+                        STEP 1
                     </span>
-                    <button
-                        onClick={() => setShowRiddle(!showRiddle)}
-                        className="px-3 py-1 rounded font-mono text-[10px] font-bold uppercase bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30 hover:bg-cyber-cyan/20 transition-all"
-                    >
-                        {showRiddle ? 'HIDE' : 'REVEAL'}
-                    </button>
+                    <span className="text-cyber-muted font-mono text-xs uppercase tracking-wider">
+                        {riddleVerified ? '✓ Decoded Message Verified' : 'Enter the Decoded Message'}
+                    </span>
                 </div>
-                {showRiddle && (
-                    <div className="bg-[#0a0e14] rounded border border-cyber-border p-4">
+
+                {!riddleVerified ? (
+                    <>
+                        <p className="text-cyber-muted text-xs font-mono mb-3">
+                            Decode the Morse signal above and type the full decoded message here.
+                        </p>
+                        <textarea
+                            value={riddleInput}
+                            onChange={(e) => setRiddleInput(e.target.value)}
+                            placeholder="Type the decoded message here..."
+                            rows={3}
+                            className="w-full bg-[#0a0e14] text-cyber-text font-mono text-sm p-3 rounded border border-cyber-border focus:border-cyber-cyan focus:outline-none resize-y placeholder:text-[#555]"
+                        />
+
+                        {riddleMessage && (
+                            <div className={`mt-3 p-3 rounded border ${riddleMessage.type === 'success' ? 'bg-cyber-green/10 border-cyber-green text-cyber-green' : 'bg-cyber-red/10 border-cyber-red text-cyber-red'} font-mono text-sm`}>
+                                {riddleMessage.text}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handleVerifyRiddle}
+                            disabled={!riddleInput.trim()}
+                            className="btn-neon w-full mt-3"
+                        >
+                            VERIFY DECODED MESSAGE
+                        </button>
+                    </>
+                ) : (
+                    <div className="bg-[#0a0e14] rounded border border-cyber-green/30 p-4">
                         <p className="text-cyber-text font-mono text-sm leading-relaxed italic">
                             &quot;{decodedRiddle}&quot;
                         </p>
@@ -211,17 +258,24 @@ function MorseTransmissionPuzzle({
                 )}
             </div>
 
-            {/* Answer Input */}
-            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
-                <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
-                    Riddle Answer — Transmission {transmissionNumber}
-                </label>
+            {/* STEP 2: Solve the riddle (only visible after Step 1 verified) */}
+            <div className={`p-4 rounded border ${riddleVerified ? 'bg-cyber-dark border-cyber-cyan/30' : 'bg-cyber-dark border-cyber-border opacity-40'}`}>
+                <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-sm font-mono font-bold px-2 py-0.5 rounded ${riddleVerified ? 'bg-cyber-cyan/20 text-cyber-cyan' : 'bg-cyber-border/20 text-cyber-muted'}`}>
+                        STEP 2
+                    </span>
+                    <span className="text-cyber-muted font-mono text-xs uppercase tracking-wider">
+                        {riddleVerified ? 'Enter the Riddle Answer' : '🔒 Decode the message first'}
+                    </span>
+                </div>
+
                 <input
                     type="text"
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value.toUpperCase())}
-                    placeholder="ENTER THE ANSWER"
+                    placeholder={riddleVerified ? 'ENTER THE ANSWER' : 'LOCKED'}
                     className="input-cyber text-center text-lg w-full tracking-widest"
+                    disabled={!riddleVerified}
                 />
             </div>
 
@@ -232,11 +286,11 @@ function MorseTransmissionPuzzle({
             )}
 
             <button
-                onClick={handleSubmit}
-                disabled={!answer.trim() || submitting}
+                onClick={handleSubmitAnswer}
+                disabled={!riddleVerified || !answer.trim() || submitting}
                 className="btn-neon w-full"
             >
-                {submitting ? 'DECRYPTING...' : `DECODE TRANSMISSION ${transmissionNumber}`}
+                {submitting ? 'DECRYPTING...' : `SUBMIT ANSWER — TRANSMISSION ${transmissionNumber}`}
             </button>
         </div>
     );
