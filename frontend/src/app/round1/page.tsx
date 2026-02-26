@@ -1090,7 +1090,7 @@ export default function Round1Page() {
 
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="btn-neon h-full px-6 py-3 font-orbitron text-sm transition-all hidden md:block"
+                        className="btn-neon h-full px-6 py-3 font-orbitron text-sm transition-all"
                     >
                         DISCONNECT
                     </button>
