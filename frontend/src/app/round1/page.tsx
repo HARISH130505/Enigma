@@ -56,17 +56,52 @@ Your investigation begins now.`,
     },
     2: {
         title: 'Command Update – Strike Target Confirmed',
-        text: `The reconstructed map identifies the compromised location.
+        text: `03:30 Hours – Strategic Briefing
 
-Black Ridge Airfield.
+The emergency war meeting was convened inside the Control Room.
 
-This confirms the transmission contained our strike objective. Which means the traitor had access to classified operational data.
+Infantry officers arrived first. As per standard protocol, they moved in from the Barracks corridor, passing through the Armory checkpoint before entering the command chamber.
 
-Now we must determine how they reached the Signal Chamber without detection.
+Airfield command representatives joined shortly after. Radar projections were displayed. Strike coordinates for BlackRidge Airfield were reviewed. Every senior officer present heard the finalized route.
 
-To do that… we must understand how movement inside this bunker actually works.
+Among them…
 
-Inside this bunker, movement is never random. Every officer entering through the reinforced Entry Gate must pass through internal clearance before advancing deeper. Equipment authorization is verified before operational review. Surveillance confirmation is completed before any signal is transmitted. And beyond the transmission chamber lies only a final emergency exit — a path no one reaches without passing through every prior section.
+was the traitor.
+
+The meeting concluded at 03:58 hours.
+
+Most personnel returned the way they came. However, airfield officers were later recorded exiting through the restricted War Archive passage — a route typically used for classified document handling.
+
+04:17 Hours – Security Breach
+
+An unauthorized encrypted transmission was detected.
+
+Source: Signal Chamber.
+
+The broadcast contained partial strike coordinates — enough to compromise the operation.
+
+Minutes before the breach, surveillance logs indicate movement near the Radar Unit, the only surveillance hub directly connected to the Signal Chamber’s transmission grid.
+
+Whoever sent the signal knew the bunker layout.
+
+They were present at the 03:30 briefing.
+They understood the strike plan.
+They had access from the Barracks and Armory approach.
+They passed through Control.
+They reached Radar.
+They triggered the breach in the Signal Chamber.
+And someone exited toward the War Archive routes shortly after.
+
+The timeline is precise.
+
+The traitor was in the room at 03:30.
+
+The betrayal was executed at 04:17.
+
+Now the question remains —
+
+Did he flee…
+or is he still inside the bunker?
 
 The bunker's architecture itself enforces order. No chamber can be accessed out of progression.
 
@@ -270,24 +305,29 @@ function JigsawPuzzle({
                     A torn map fragment was recovered from the furnace. Reconstruct it to reveal the compromised strike location.
                 </p>
 
-                {/* External puzzle link */}
-                <div className="text-center p-6 bg-cyber-darker rounded border border-cyber-cyan/30 mb-4">
-                    <p className="text-cyber-text text-sm font-mono mb-4">
-                        Click the button below to open the jigsaw puzzle. Reconstruct the map fragment to identify the target.
-                    </p>
-                    <a
-                        href="https://puzzel.org/en/jigsaw/play?p=-OmDvPAFTJeNTOz155DB"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block px-8 py-3 bg-cyber-cyan/20 border-2 border-cyber-cyan text-cyber-cyan font-orbitron font-bold text-sm tracking-wider rounded hover:bg-cyber-cyan/30 hover:shadow-[0_0_20px_rgba(0,255,255,0.3)] transition-all duration-300"
-                    >
-                        🧩 OPEN MAP FRAGMENT PUZZLE
-                    </a>
+                {/* Embedded jigsaw puzzle */}
+                <div className="bg-cyber-darker rounded border border-cyber-cyan/30 mb-4 overflow-hidden">
+                    <div className="p-3 border-b border-cyber-cyan/20">
+                        <p className="text-cyber-text text-sm font-mono text-center">
+                            🧩 Reconstruct the torn map fragment below to identify the compromised strike location.
+                        </p>
+                    </div>
+                    <div className="w-full" style={{ minHeight: '600px' }}>
+                        <iframe
+                            src="https://puzzel.org/en/jigsaw/embed?p=-OmOrn0qtAtCLhGa71xx"
+                            width="100%"
+                            height="600"
+                            frameBorder="0"
+                            style={{ border: 'none', display: 'block' }}
+                            title="Map Fragment Jigsaw Puzzle"
+                            allow="fullscreen"
+                        />
+                    </div>
                 </div>
 
                 <div className="p-3 bg-cyber-orange/10 border border-cyber-orange/30 rounded">
                     <p className="text-cyber-orange text-xs font-mono text-center">
-                        ⚠ After completing the puzzle, verify with your mentor, then click <strong>MARK AS COMPLETED</strong> below.
+                        ⚠ After completing the puzzle, click <strong>MARK AS COMPLETED</strong> below to proceed.
                     </p>
                 </div>
             </div>
