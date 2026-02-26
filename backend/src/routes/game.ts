@@ -57,13 +57,18 @@ router.get('/progress', authenticateTeam, async (req: AuthRequest, res: Response
             return acc;
         }, {});
 
+        // Calculate global 110-minute expiration from start time
+        const startedAt = new Date(session.started_at);
+        const globalExpiresAt = new Date(startedAt.getTime() + (110 * 60 * 1000));
+
         res.json({
             session: {
                 id: session.id,
                 status: session.status,
                 currentRound: session.current_round,
                 startedAt: session.started_at,
-                expiresAt: session.expires_at
+                expiresAt: session.expires_at,
+                globalExpiresAt: globalExpiresAt.toISOString()
             },
             rounds: roundProgress,
             attemptStats

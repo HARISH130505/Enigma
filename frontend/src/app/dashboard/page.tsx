@@ -24,6 +24,7 @@ interface GameProgress {
         currentRound: number;
         startedAt: string;
         expiresAt: string;
+        globalExpiresAt: string;
     };
     rounds: RoundProgress[];
 }
@@ -148,7 +149,7 @@ export default function Dashboard() {
     ];
 
     const totalPoints = progress?.rounds.reduce((sum, r) => sum + (r.points || 0), 0) || 0;
-    const isGameCompleted = progress?.session.status === 'completed' || (progress?.session.expiresAt && new Date() >= new Date(progress.session.expiresAt));
+    const isGameCompleted = progress?.session.status === 'completed' || (progress?.session.globalExpiresAt && new Date() >= new Date(progress.session.globalExpiresAt));
 
     return (
         <div className="min-h-screen p-4 md:p-8">
@@ -183,13 +184,13 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {progress?.session.expiresAt && (
+                    {progress?.session.globalExpiresAt && (
                         <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
                             <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
                                 Time Remaining
                             </div>
                             <div className="text-2xl font-orbitron font-bold text-cyber-cyan leading-none">
-                                <Countdown expiresAt={progress.session.expiresAt} />
+                                <Countdown expiresAt={progress.session.globalExpiresAt} />
                             </div>
                         </div>
                     )}
