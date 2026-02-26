@@ -613,7 +613,7 @@ export default function Round2Page() {
                                     <div className="flex items-center gap-3">
                                         <div className={`w-2 h-2 rounded-full ${level.complete ? 'bg-cyber-green' : 'bg-current opacity-30'} group-hover:animate-pulse`} />
                                         <div className="flex flex-col space-x-2">
-                                            <span className="text-[10px] uppercase opacity-50">Level 0{level.num}</span>
+                                            <span className="text-[10px] uppercase opacity-50">Level 0{level.num}-</span>
                                             <span className="font-bold">{level.title}</span>
                                         </div>
                                     </div>
