@@ -24,7 +24,7 @@ router.post('/login', async (req: Request, res: Response) => {
             .from('teams')
             .select('*')
             .eq('team_name', teamName.toLowerCase())
-            .single();
+            .maybeSingle();
 
         if (teamError) {
             console.error('Supabase team lookup error:', teamError);
@@ -52,7 +52,7 @@ router.post('/login', async (req: Request, res: Response) => {
             .select('*')
             .eq('team_id', team.id)
             .eq('status', 'active')
-            .single();
+            .maybeSingle();
 
         let sessionId: string;
 
