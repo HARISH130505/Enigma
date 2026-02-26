@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Terminal, Countdown, ProgressTracker, SystemIntegrity, Typewriter } from '@/components/ui';
+import { Terminal, Countdown, ProgressTracker, SystemIntegrity, Typewriter, AccessMessage } from '@/components/ui';
 import api from '@/lib/api';
 
 interface RoundProgress {
@@ -34,6 +34,7 @@ export default function Dashboard() {
     const [progress, setProgress] = useState<GameProgress | null>(null);
     const [briefing, setBriefing] = useState<{ title: string; briefing: string; objectives: string[] } | null>(null);
     const [showBriefing, setShowBriefing] = useState(false);
+    const [accessMessage, setAccessMessage] = useState<{ type: 'granted' | 'denied'; message: string } | null>(null);
 
     const fetchProgress = useCallback(async () => {
         try {
@@ -94,6 +95,10 @@ export default function Dashboard() {
     const navigateToRound = (roundNum: number) => {
         const status = getRoundStatus(roundNum);
         if (status === 'locked') return;
+        if (status === 'complete') {
+            setAccessMessage({ type: 'denied', message: `ACCESS DENIED: Round ${roundNum} has already concluded.` });
+            return;
+        }
         if (status === 'needs-unlock') {
             router.push(`/unlock?next=${roundNum}`);
             return;
@@ -143,9 +148,18 @@ export default function Dashboard() {
     ];
 
     const totalPoints = progress?.rounds.reduce((sum, r) => sum + (r.points || 0), 0) || 0;
+    const isGameCompleted = progress?.session.status === 'completed' || (progress?.session.expiresAt && new Date() >= new Date(progress.session.expiresAt));
 
     return (
         <div className="min-h-screen p-4 md:p-8">
+            {accessMessage && (
+                <AccessMessage
+                    type={accessMessage.type}
+                    message={accessMessage.message}
+                    onComplete={() => setAccessMessage(null)}
+                />
+            )}
+
             {/* Header */}
             <header className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 p-4 border-b border-cyber-border/20">
 
@@ -191,7 +205,7 @@ export default function Dashboard() {
             </header>
 
             {/* Game Complete Celebration */}
-            {progress?.session.status === 'completed' && (
+            {isGameCompleted && (
                 <div className="mb-8 p-8 bg-[#0a0e14] border-2 border-[#00ff88] rounded-xl text-center shadow-[0_0_40px_rgba(0,255,136,0.2)] relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-[#00ff88]/5 via-transparent to-[#00ffff]/5" />
                     <div className="relative z-10">
@@ -385,42 +399,6 @@ export default function Dashboard() {
                         </h2>
 
                         <ProgressTracker rounds={rounds.map(r => ({ ...r, status: r.status === 'needs-unlock' ? 'locked' as const : r.status }))} />
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="card-cyber">
-                        <h2 className="text-lg font-orbitron font-bold text-cyber-text mb-4 flex items-center gap-2">
-                            <span className="text-cyber-cyan">◆</span> QUICK ACCESS
-                        </h2>
-
-                        <div className="space-y-2">
-                            {rounds.filter(r => r.status === 'active').map(round => (
-                                <button
-                                    key={round.number}
-                                    onClick={() => navigateToRound(round.number)}
-                                    className="w-full p-3 bg-cyber-cyan/10 border border-cyber-cyan rounded text-cyber-cyan font-mono text-sm hover:bg-cyber-cyan/20 transition-colors"
-                                >
-                                    CONTINUE ROUND {round.number} →
-                                </button>
-                            ))}
-
-                            {rounds.filter(r => r.status === 'needs-unlock').map(round => (
-                                <button
-                                    key={`unlock-${round.number}`}
-                                    onClick={() => navigateToRound(round.number)}
-                                    className="w-full p-3 bg-[#ff9800]/10 border border-[#ff9800] rounded text-[#ff9800] font-mono text-sm hover:bg-[#ff9800]/20 transition-colors"
-                                >
-                                    🔐 UNLOCK ROUND {round.number} →
-                                </button>
-                            ))}
-
-                            {progress?.session.status === 'completed' && (
-                                <div className="p-4 bg-cyber-green/10 border border-cyber-green rounded text-center">
-                                    <div className="text-cyber-green font-orbitron font-bold text-sm">🏆 ENIGMA CRACKED</div>
-                                    <p className="text-cyber-green/70 font-mono text-xs mt-1">All rounds completed!</p>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
             </div>
