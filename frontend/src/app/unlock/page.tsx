@@ -138,7 +138,7 @@ function UnlockContent() {
                                 onKeyDown={handleKeyDown}
                                 placeholder="Enter key to unlock..."
                                 disabled={unlocked}
-                                className="w-full bg-[#0d1117] text-[#e0e0e0] font-mono text-lg p-4 rounded-lg border-2 border-[#00ffff]/30 focus:border-[#00ffff] focus:outline-none focus:shadow-[0_0_20px_rgba(0,255,255,0.2)] text-center tracking-[0.3em] placeholder:text-[#333] placeholder:tracking-normal transition-all"
+                                className="w-full bg-[#0d1117] text-[#e0e0e0] font-mono text-xl p-5 md:p-6 md:text-2xl rounded-lg border-2 border-[#00ffff]/30 focus:border-[#00ffff] focus:outline-none focus:shadow-[0_0_20px_rgba(0,255,255,0.2)] text-center tracking-[0.3em] placeholder:text-[#333] placeholder:tracking-normal transition-all"
                                 autoFocus
                             />
                         </div>
@@ -147,7 +147,7 @@ function UnlockContent() {
                             onClick={handleSubmit}
                             disabled={!key.trim() || submitting || unlocked}
                             className={`
-                                w-full py-4 rounded-lg font-orbitron font-bold text-sm uppercase tracking-widest transition-all
+                                w-full py-5 md:py-6 rounded-lg font-orbitron font-bold text-base md:text-lg uppercase tracking-widest transition-all
                                 ${unlocked
                                     ? 'bg-[#00ff88]/20 text-[#00ff88] border-2 border-[#00ff88]'
                                     : 'bg-[#00ffff]/10 text-[#00ffff] border-2 border-[#00ffff] hover:bg-[#00ffff]/20 hover:shadow-[0_0_30px_rgba(0,255,255,0.3)]'

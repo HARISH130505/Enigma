@@ -612,7 +612,7 @@ export default function Round2Page() {
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className={`w-2 h-2 rounded-full ${level.complete ? 'bg-cyber-green' : 'bg-current opacity-30'} group-hover:animate-pulse`} />
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-col space-x-2">
                                             <span className="text-[10px] uppercase opacity-50">Level 0{level.num}</span>
                                             <span className="font-bold">{level.title}</span>
                                         </div>
@@ -623,14 +623,6 @@ export default function Round2Page() {
                         </div>
                     </div>
 
-                    <div className="card-cyber border-cyber-cyan/30">
-                        <h2 className="text-xs font-orbitron font-bold text-cyber-cyan mb-2 uppercase">MISSION LOG</h2>
-                        <div className="text-[10px] font-mono text-cyber-muted space-y-1">
-                            <p>&gt; Breach Detected: 29m ago</p>
-                            <p>&gt; Countermeasures: Active</p>
-                            <p>&gt; Progress: {Math.round([status?.level1, status?.level2].filter(Boolean).length / 2 * 100)}%</p>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Main Content Area */}
