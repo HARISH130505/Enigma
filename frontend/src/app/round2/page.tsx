@@ -542,43 +542,52 @@ export default function Round2Page() {
             )}
 
             {/* Header */}
-            <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-                <div>
+            <header className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 p-4 border-b border-cyber-border/20">
+
+                <div className="text-center lg:text-left">
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="text-cyber-muted hover:text-cyber-cyan text-xs font-mono mb-2 flex items-center gap-2 transition-colors"
+                        className="text-cyber-muted hover:text-cyber-cyan text-xs font-mono mb-2 flex items-center justify-center lg:justify-start gap-2 transition-colors w-full"
                     >
                         &lt; RETURN TO COMMAND CENTER
                     </button>
-                    <h1 className="text-4xl font-orbitron font-black text-cyber-cyan tracking-tighter">
-                        ROUND 2: <span className="text-cyber-text">DIGITAL FORENSICS</span>
+                    <h1 className="text-3xl font-orbitron font-bold tracking-widest text-cyber-cyan drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">
+                        ROUND 2: DIGITAL FORENSICS
                     </h1>
+                    <p className="text-cyber-muted font-mono text-xs mt-1 uppercase tracking-tighter">
+                        Breach Level: <span className="text-red-500/80">CRITICAL</span>
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-1 md:gap-2">
-                    {/* Score Box */}
-                    <div className="flex flex-col items-center justify-center px-4 md:px-8 py-3 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
-                        <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-1 font-bold">TOTAL SCORE</div>
-                        <div className="text-2xl md:text-3xl font-digital text-[#00ffff] leading-none">{status?.points || 0}</div>
+                <div className="flex flex-wrap items-center justify-center lg:justify-end gap-4 w-full lg:w-auto mt-4 lg:mt-0">
+
+                    <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
+                        <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
+                            Total Score
+                        </div>
+                        <div className="text-2xl font-orbitron font-bold text-cyber-green leading-none">
+                            {status?.points || 0}
+                        </div>
                     </div>
 
-                    {/* Time Box */}
                     {expiresAt && (
-                        <div className="flex flex-col items-center justify-center px-6 md:px-10 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_15px_rgba(0,255,255,0.3)] z-10 scale-[1.05]">
-                            <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-2 font-bold">TIME REMAINING</div>
-                            <div className="text-3xl md:text-5xl font-digital text-[#00ffff] leading-none drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]">
-                                <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} className="text-[#00ffff]" />
+                        <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
+                            <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
+                                Time Remaining
+                            </div>
+                            <div className="text-2xl font-orbitron font-bold text-cyber-cyan leading-none">
+                                <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} />
                             </div>
                         </div>
                     )}
 
-                    {/* Disconnect Box */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="flex items-center justify-center px-4 md:px-8 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 text-[#00ffff] hover:bg-[#00ffff]/10 hover:shadow-[0_0_15px_rgba(0,255,255,0.4)] transition-all font-orbitron font-bold uppercase tracking-widest md:text-lg shadow-[0_0_10px_rgba(0,255,255,0.2)]"
+                        className="btn-neon h-full px-6 py-3 font-orbitron text-sm transition-all hidden md:block"
                     >
                         DISCONNECT
                     </button>
+
                 </div>
             </header>
 

@@ -1049,39 +1049,52 @@ export default function Round1Page() {
             )}
 
             {/* Header */}
-            <header className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-                <div>
+            <header className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8 p-4 border-b border-cyber-border/20">
+
+                <div className="text-center lg:text-left">
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="text-cyber-muted hover:text-cyber-cyan text-sm font-mono mb-2 flex items-center gap-2"
+                        className="text-cyber-muted hover:text-cyber-cyan text-xs font-mono mb-2 flex items-center justify-center lg:justify-start gap-2 transition-colors w-full"
                     >
-                        ← BACK TO DASHBOARD
+                        &lt; RETURN TO COMMAND CENTER
                     </button>
-                    <h1 className="text-3xl font-orbitron font-bold text-cyber-cyan">
+                    <h1 className="text-3xl font-orbitron font-bold tracking-widest text-cyber-cyan drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">
                         ROUND 1: AUTHENTICATION BREACH
                     </h1>
-                    <p className="text-cyber-muted text-sm font-mono mt-1">Year: 1943 · Eastern Front · Classified</p>
+                    <p className="text-cyber-muted font-mono text-xs mt-1 uppercase tracking-tighter">
+                        Year: 1943 • <span className="text-red-500/80">Eastern Front</span>
+                    </p>
                 </div>
 
-                <div className="flex flex-wrap items-center">
-                    <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border mr-8">
-                        <div className="text-xs text-cyber-muted font-mono mb-1">ROUND SCORE</div>
-                        <div className="text-2xl font-orbitron font-bold text-cyber-green">{status?.points || 0}</div>
+                <div className="flex flex-wrap items-center justify-center lg:justify-end gap-4 w-full lg:w-auto mt-4 lg:mt-0">
+
+                    <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
+                        <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
+                            Total Score
+                        </div>
+                        <div className="text-2xl font-orbitron font-bold text-cyber-green leading-none">
+                            {status?.points || 0}
+                        </div>
                     </div>
 
                     {expiresAt && (
-                        <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border mr-8">
-                            <div className="text-xs text-cyber-muted font-mono mb-1">TIME REMAINING</div>
-                            <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} />
+                        <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
+                            <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
+                                Time Remaining
+                            </div>
+                            <div className="text-2xl font-orbitron font-bold text-cyber-cyan leading-none">
+                                <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} />
+                            </div>
                         </div>
                     )}
 
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="px-6 py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all font-mono font-bold rounded"
+                        className="btn-neon h-full px-6 py-3 font-orbitron text-sm transition-all hidden md:block"
                     >
                         DISCONNECT
                     </button>
+
                 </div>
             </header>
 

@@ -311,7 +311,7 @@ export default function Dashboard() {
                     ${round.status === 'complete'
                                             ? 'border-cyber-green bg-cyber-green/5 hover:bg-cyber-green/10'
                                             : round.status === 'active'
-                                                ? 'border-cyber-cyan bg-cyber-cyan/5 hover:bg-cyber-cyan/10 hover:shadow-lg hover:shadow-cyber-cyan/20'
+                                                ? 'border-cyber-cyan bg-cyber-cyan/10 hover:bg-cyber-cyan/15 hover:shadow-lg hover:shadow-cyber-cyan/30'
                                                 : round.status === 'needs-unlock'
                                                     ? 'border-[#ff9800] bg-[#ff9800]/5 hover:bg-[#ff9800]/10 hover:shadow-lg hover:shadow-[#ff9800]/20 cursor-pointer'
                                                     : 'border-cyber-border bg-cyber-dark/50 opacity-50 cursor-not-allowed'}
@@ -327,7 +327,7 @@ export default function Dashboard() {
                                             {round.status === 'complete' ? '✓' : round.status === 'needs-unlock' ? '🔐' : `0${round.number}`}
                                         </span>
                                         <span className={`badge ${round.status === 'complete' ? 'badge-complete' :
-                                            round.status === 'active' ? 'badge-active' :
+                                            round.status === 'active' ? 'text-cyber-black bg-[#008f8f]' :
                                                 round.status === 'needs-unlock' ? 'badge-active' : 'badge-locked'
                                             }`}
                                             style={round.status === 'needs-unlock' ? { borderColor: '#ff9800', color: '#ff9800' } : {}}

@@ -142,19 +142,11 @@ router.post('/phase/1', authenticateTeam, async (req: AuthRequest, res: Response
                 finalPoints: gameResult.complete ? gameResult.totalPoints : undefined
             });
         } else {
-            const deduction = 5;
-            const newPoints = Math.max(0, currentPoints - deduction);
-            await supabase
-                .from('round_progress')
-                .update({ points: newPoints })
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 3);
-
             res.json({
                 success: false,
-                message: `DECRYPTION FAILED. Re-examine the intercepted signal. (-${deduction} Points)`,
+                message: `DECRYPTION FAILED. Re-examine the intercepted signal.`,
                 accessGranted: false,
-                pointsDeducted: deduction
+                pointsDeducted: 0
             });
         }
     } catch (error) {
@@ -211,19 +203,11 @@ router.post('/phase/2', authenticateTeam, async (req: AuthRequest, res: Response
                 finalPoints: gameResult.complete ? gameResult.totalPoints : undefined
             });
         } else {
-            const deduction = 5;
-            const newPoints = Math.max(0, currentPoints - deduction);
-            await supabase
-                .from('round_progress')
-                .update({ points: newPoints })
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 3);
-
             res.json({
                 success: false,
-                message: `DECRYPTION FAILED. Noise interference detected. (-${deduction} Points)`,
+                message: `DECRYPTION FAILED. Noise interference detected.`,
                 accessGranted: false,
-                pointsDeducted: deduction
+                pointsDeducted: 0
             });
         }
     } catch (error) {
@@ -280,19 +264,11 @@ router.post('/phase/3', authenticateTeam, async (req: AuthRequest, res: Response
                 finalPoints: gameResult.complete ? gameResult.totalPoints : undefined
             });
         } else {
-            const deduction = 5;
-            const newPoints = Math.max(0, currentPoints - deduction);
-            await supabase
-                .from('round_progress')
-                .update({ points: newPoints })
-                .eq('session_id', req.sessionId)
-                .eq('round_number', 3);
-
             res.json({
                 success: false,
-                message: `DECRYPTION FAILED. Signal degradation detected. (-${deduction} Points)`,
+                message: `DECRYPTION FAILED. Signal degradation detected.`,
                 accessGranted: false,
-                pointsDeducted: deduction
+                pointsDeducted: 0
             });
         }
     } catch (error) {
