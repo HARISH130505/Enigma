@@ -6,8 +6,8 @@ const router = Router();
 
 // Unlock keys for each round
 const UNLOCK_KEYS: Record<number, string> = {
-    2: process.env.UNLOCK_KEY_R2 || 'SIGABA',
-    3: process.env.UNLOCK_KEY_R3 || 'LORENZ',
+    2: process.env.UNLOCK_KEY_R2 as string,
+    3: process.env.UNLOCK_KEY_R3 as string,
 };
 
 const ROUND_DURATIONS: Record<number, number> = {

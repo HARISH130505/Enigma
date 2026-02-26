@@ -547,7 +547,7 @@ export default function Round3Page() {
                                 {phases[activePhase - 1].title.toUpperCase()}
                             </h2>
                             {phases[activePhase - 1].complete && (
-                                <span className="badge badge-complete">COMPLETE</span>
+                                <span className="badge badge-complete">COMPLETED</span>
                             )}
                         </div>
 

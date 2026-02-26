@@ -12,17 +12,17 @@ const router = Router();
 // Correct answers
 const CORRECT_ANSWERS = {
     // Level 1: Map puzzle
-    airfield: 'BLACKRIDGE AIRFIELD',
+    airfield: process.env.R1_AIRFIELD as string,
     // Level 2: Bunker sequence (drag-and-drop ordering)
-    bunkerSequence: ['barracks', 'armory', 'control-room', 'radar-unit', 'signal-room', 'war-archive', 'escape-tunnel'],
+    bunkerSequence: (process.env.R1_BUNKER_SEQUENCE as string).split(','),
     // Level 3: Caesar cipher decryption (shift-3)
-    cipherAnswer: 'bombing has been planned on black ridge airfield',
+    cipherAnswer: process.env.R1_CIPHER_ANSWER as string,
     // Level 4: Binary decoding
-    binaryAnswer: '7359',
+    binaryAnswer: process.env.R1_BINARY_ANSWER as string,
     // Level 5 Q1: Regiment identification (MCQ)
-    regiment: 'communication field',
+    regiment: process.env.R1_REGIMENT as string,
     // Level 5 Q2: Traitor's ID
-    traitorId: 'CF-8735962',
+    traitorId: process.env.R1_TRAITOR_ID as string,
 };
 
 // Points constants

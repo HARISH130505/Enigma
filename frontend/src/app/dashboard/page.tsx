@@ -330,7 +330,7 @@ export default function Dashboard() {
                                             }`}
                                             style={round.status === 'needs-unlock' ? { borderColor: '#ff9800', color: '#ff9800' } : {}}
                                         >
-                                            {round.status === 'needs-unlock' ? 'UNLOCK' : round.status.toUpperCase()}
+                                            {round.status === 'complete' ? 'COMPLETED' : round.status === 'needs-unlock' ? 'UNLOCK' : round.status.toUpperCase()}
                                         </span>
                                     </div>
 

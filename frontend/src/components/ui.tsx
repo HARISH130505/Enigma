@@ -227,7 +227,7 @@ export function ProgressTracker({ rounds, className = '' }: ProgressTrackerProps
                             <span className={`badge ${round.status === 'complete' ? 'badge-complete' :
                                 round.status === 'active' ? 'badge-active' : 'badge-locked'
                                 }`}>
-                                {round.status === 'complete' ? 'COMPLETE' :
+                                {round.status === 'complete' ? 'COMPLETED' :
                                     round.status === 'active' ? 'ACTIVE' : 'LOCKED'}
                             </span>
                         </div>

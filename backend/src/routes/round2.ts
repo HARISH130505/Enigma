@@ -7,8 +7,8 @@ const router = Router();
 
 // Correct answers
 const CORRECT_ANSWERS = {
-    key2: process.env.R2_KEY2 || '428',             // Row ID (IOU)
-    key3: process.env.R2_KEY3 || 'CIPHER',            // Riddle answer
+    key2: process.env.R2_KEY2 as string,             // Row ID (IOU)
+    key3: process.env.R2_KEY3 as string,            // Riddle answer
 };
 
 // Helper to log attempt
