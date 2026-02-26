@@ -124,26 +124,30 @@ The contents remain scrambled.
 Decrypt the intercepted transmission to determine exactly what was leaked.`,
     },
     4: {
-        title: 'Signal Intelligence Log – Restricted',
-        text: `The decrypted transmission has confirmed our worst fear.
+        title: 'Binary Decoding',
+        text: `Signal Intelligence Log – Restricted
+
+The decrypted transmission has confirmed our worst fear.
 
 The message did not originate from outside. It came from within these walls.
 
-After isolating the transmission trace, signal technicians conducted a deeper sweep of the bunker's communication systems — searching for anything the sender might have left behind.
+After isolating the transmission trace, signal technicians conducted a deeper sweep of the bunker’s communication systems — searching for anything the sender might have left behind.
 
 At first, nothing.
 
 Then… buried in the signal residue… they found it.
 
-A fragment of identification data, embedded inside the transmission header. Not a full code. Just a piece.
+A fragment of officer’s ID was found, embedded inside the transmission header. Not a full code. Just a piece. This fragment could be any part of the officer’s ID.
 
-But enough to prove one thing: The signal was sent using an authorized officer's credentials.
+But enough to prove one thing: The signal was sent using an authorized officer’s credentials.
 
 The fragment is not recorded in readable form. It exists only as a raw binary imprint pulled from the system logs — incomplete, corrupted, but genuine.
 
 If we decode it… we may learn whose access was used to send the message.
 
-Investigators — decode the fragment.`,
+Investigators — decode the fragment.
+
+A binary imprint was recovered from the transmission header. Decode the fragment to reveal the authentication code.`,
     },
     5: {
         title: 'Final Command Directive – Traitor Identification',
@@ -155,9 +159,8 @@ Internal Command Notice – Full Breach Reconstruction:
 The decoded fragment has been verified as part of an officer authentication code used during signal transmission. This confirms the breach was not anonymous.
 
 High Command has now released restricted bunker records for investigation. You have been given:
-• The full list of officer identification codes
-• Signal Chamber access authorizations
-• Console authentication logs recorded during the breach window
+* The full list of officer identification codes along with the access areas
+* Movement logs recorded during the breach window
 
 The AirStrike information was shared first to the Airforce Regiment, then to the Communication Engineers, and 2 Soldiers from the Southern Infantry were present.
 
@@ -167,10 +170,10 @@ The personnel logs have reduced the number of possible suspects. Security has re
 The breach occurred at 04:17 hours. For the transmission to occur, the sender must have followed the bunker's internal route — or bypassed it.
 
 Only one officer can satisfy every condition. To identify the traitor, you must now determine:
-• Who had authorization to access the Signal Chamber
-• Who could physically reach it following bunker progression
-• Who was present at the correct time
-• Whose identification code matches the recovered fragment
+* Who had authorization to access the Signal Chamber
+* Who could physically reach it following bunker progression
+* Who was present at the correct time
+* Whose identification code matches the recovered fragment
 
 Name the officer responsible for the breach. Be prepared to justify your conclusion to Command.
 
