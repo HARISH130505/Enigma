@@ -266,20 +266,23 @@ function JigsawPuzzle({
     disabled: boolean;
     onPointsChange: () => void;
 }) {
+    const [answer, setAnswer] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const handleMarkCompleted = async () => {
+    const handleSubmit = async () => {
+        if (!answer.trim()) return;
         setSubmitting(true);
         setMessage(null);
         try {
-            const response = await api.submitEvidence1(true) as { success: boolean; message: string; pointsEarned?: number };
+            const response = await api.submitEvidence1(answer) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
                 setMessage({ type: 'success', text: response.message });
                 onPointsChange();
                 setTimeout(onComplete, 1500);
             } else {
                 setMessage({ type: 'error', text: response.message });
+                onPointsChange();
             }
         } catch {
             setMessage({ type: 'error', text: 'Validation failed. Try again.' });
@@ -306,7 +309,7 @@ function JigsawPuzzle({
                 </p>
 
                 {/* External puzzle link */}
-                <div className="text-center p-6 bg-cyber-darker rounded border border-cyber-cyan/30 mb-4">
+                <div className="text-center p-6 bg-cyber-darker rounded border border-cyber-cyan/30 mb-6">
                     <p className="text-cyber-text text-sm font-mono mb-4">
                         Click the button below to open the jigsaw puzzle. Reconstruct the map fragment to identify the target.
                     </p>
@@ -320,10 +323,18 @@ function JigsawPuzzle({
                     </a>
                 </div>
 
-                <div className="p-3 bg-cyber-orange/10 border border-cyber-orange/30 rounded">
-                    <p className="text-cyber-orange text-xs font-mono text-center">
-                        ⚠ After completing the puzzle, verify with your mentor, then click <strong>MARK AS COMPLETED</strong> below.
-                    </p>
+                {/* Question & Answer input */}
+                <div className="space-y-2 mt-4">
+                    <label className="text-sm text-cyber-cyan font-mono font-bold block mb-2">
+                        QUESTION: Where is the bombing planned?
+                    </label>
+                    <input
+                        type="text"
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        placeholder="Enter the target location..."
+                        className="input-cyber w-full resize-none text-center tracking-widest uppercase"
+                    />
                 </div>
             </div>
 
@@ -338,11 +349,11 @@ function JigsawPuzzle({
 
             <div className="flex items-center gap-3">
                 <button
-                    onClick={handleMarkCompleted}
-                    disabled={submitting}
+                    onClick={handleSubmit}
+                    disabled={!answer.trim() || submitting}
                     className="btn-neon flex-1"
                 >
-                    {submitting ? 'VERIFYING...' : '✓ MARK AS COMPLETED'}
+                    {submitting ? 'VERIFYING TARGET...' : 'SUBMIT TARGET LOCATION'}
                 </button>
                 <HintButton level={1} onPointsChange={onPointsChange} />
             </div>

@@ -11,6 +11,8 @@ const router = Router();
 
 // Correct answers
 const CORRECT_ANSWERS = {
+    // Level 1: Map puzzle
+    airfield: 'BLACKRIDGE AIRFIELD',
     // Level 2: Bunker sequence (drag-and-drop ordering)
     bunkerSequence: ['barracks', 'armory', 'control-room', 'radar-unit', 'signal-room', 'war-archive', 'escape-tunnel'],
     // Level 3: Caesar cipher decryption (shift-3)
@@ -80,16 +82,18 @@ async function deductPoints(sessionId: string, pointsToDeduct: number) {
 // ──────────────────── Level 1: Jigsaw Puzzle ────────────────────
 router.post('/evidence/1', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
-        const { completed } = req.body; // boolean – self-reported completion
-        console.log(`[Level 1] Session ${req.sessionId} jigsaw completed: ${completed}`);
+        const { answer } = req.body;
+        console.log(`[Level 1] Session ${req.sessionId} submitted answer: ${answer}`);
 
-        if (typeof completed !== 'boolean') {
-            return res.status(400).json({ error: 'Invalid submission format.' });
+        if (!answer || typeof answer !== 'string') {
+            return res.status(400).json({ error: 'No answer provided.' });
         }
 
-        await logAttempt(req.sessionId!, 1, 1, { completed }, completed);
+        const isCorrect = answer.trim().toUpperCase() === CORRECT_ANSWERS.airfield;
 
-        if (completed) {
+        await logAttempt(req.sessionId!, 1, 1, { answer }, isCorrect);
+
+        if (isCorrect) {
             await supabase
                 .from('round_progress')
                 .update({ evidence_1_complete: true } as any)
@@ -100,16 +104,19 @@ router.post('/evidence/1', authenticateTeam, async (req: AuthRequest, res: Respo
 
             res.json({
                 success: true,
-                message: 'MAP FRAGMENT RECONSTRUCTED. Strike coordinates partially recovered. (+25 Points)',
+                message: 'MAP FRAGMENT RECONSTRUCTED. Strike coordinates recovered. (+25 Points)',
                 accessGranted: true,
                 pointsEarned: POINTS.CORRECT,
                 totalPoints: newPoints,
             });
         } else {
+            const newPoints = await deductPoints(req.sessionId!, POINTS.WRONG_PENALTY);
             res.json({
                 success: false,
-                message: 'The map fragment has not been fully assembled. Keep trying.',
+                message: 'INCORRECT LOCATION. The identified target does not match tactical projections. (-10 Points)',
                 accessGranted: false,
+                pointsDeducted: POINTS.WRONG_PENALTY,
+                totalPoints: newPoints,
             });
         }
     } catch (error) {
@@ -331,7 +338,7 @@ router.post('/hint/:level', authenticateTeam, async (req: AuthRequest, res: Resp
         const newPoints = await deductPoints(req.sessionId!, POINTS.HINT_PENALTY);
 
         const hints: Record<number, string> = {
-            1: 'Piece the torn map back together. Look for edge pieces and matching patterns.',
+            1: 'Arrange the puzzle to find the Red circle.',
             2: 'An officer enters through the Entry Gate first. Equipment is checked before operations. Surveillance before signals. The exit is always last.',
             3: 'This is a simple letter-shift cipher. Try shifting each letter back by 3 positions in the alphabet. A becomes X, B becomes Y, etc.',
             4: 'Convert the binary string to decimal. Split the binary sequence into meaningful groups.',

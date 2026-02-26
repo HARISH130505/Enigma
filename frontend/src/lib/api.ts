@@ -119,10 +119,10 @@ class ApiClient {
     }
 
     // Round 1 endpoints – Attack on BlackRidge Airfield
-    async submitEvidence1(completed: boolean) {
+    async submitEvidence1(answer: string) {
         return this.request('/round1/evidence/1', {
             method: 'POST',
-            body: JSON.stringify({ completed }),
+            body: JSON.stringify({ answer }),
         });
     }
 
