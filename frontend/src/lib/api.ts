@@ -164,21 +164,17 @@ class ApiClient {
         return this.request('/round1/status');
     }
 
-    // Round 2 endpoints (The Mischief Triathlon)
-    async getPhase1Data() {
+    // Round 2 endpoints (Digital Forensics)
+    async getLevel1Data() {
         return this.request<{
-            logA: string[];
-            logB: string[];
-            logC: string[];
-            conversionChallenge: string;
-            sortedIndexChallenge: number;
+            systemMap: Array<{ rowId: number; folder: string; size: number }>;
         }>('/round2/phase/1/data');
     }
 
-    async submitRound2Phase1(data: {
-        conversionAnswer: string;
-        sortedTimestamp: string;
-        breachKey: number;
+    async submitRound2Level1(data: {
+        rowId: string;
+        vowelCheckComplete: boolean;
+        lengthMathCheckComplete: boolean;
     }) {
         return this.request('/round2/phase/1', {
             method: 'POST',
@@ -186,10 +182,10 @@ class ApiClient {
         });
     }
 
-    async submitRound2Phase2(data: {
-        rowId: string;
-        vowelCheckComplete: boolean;
-        lengthMathCheckComplete: boolean;
+    async submitRound2Level2(data: {
+        riddleAnswer: string;
+        hexCleaningComplete: boolean;
+        hexDecodingComplete: boolean;
     }) {
         return this.request('/round2/phase/2', {
             method: 'POST',
@@ -197,32 +193,9 @@ class ApiClient {
         });
     }
 
-    async submitRound2Phase3(data: {
-        riddleAnswer: string;
-        hexCleaningComplete: boolean;
-        hexDecodingComplete: boolean;
-    }) {
-        return this.request('/round2/phase/3', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async submitRound2Checkpoint(code: string) {
-        return this.request('/round2/checkpoint', {
-            method: 'POST',
-            body: JSON.stringify({ code }),
-        });
-    }
 
     async getRound2Status() {
         return this.request('/round2/status');
-    }
-
-    async getPhase2Data() {
-        return this.request<{
-            systemMap: Array<{ rowId: number; folder: string; size: number }>;
-        }>('/round2/phase/2/data');
     }
 
     // Compiler
@@ -266,15 +239,17 @@ class ApiClient {
         }>('/round3/transmissions');
     }
 
-    async submitRound3Complete(code: string) {
-        return this.request('/round3/complete', {
-            method: 'POST',
-            body: JSON.stringify({ code }),
-        });
-    }
 
     async getRound3Status() {
         return this.request('/round3/status');
+    }
+
+    // Game unlock
+    async unlockRound(targetRound: number, key: string) {
+        return this.request('/game/unlock-round', {
+            method: 'POST',
+            body: JSON.stringify({ targetRound, key }),
+        });
     }
 
     // Admin endpoints

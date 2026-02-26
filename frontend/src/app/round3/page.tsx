@@ -11,7 +11,6 @@ interface RoundStatus {
     phase2: boolean;
     phase3: boolean;
     points: number;
-    checkpointUnlocked: boolean;
     completed: boolean;
 }
 
@@ -107,7 +106,7 @@ function MorseTransmissionPuzzle({
     transmissionNumber: number;
     morseCode: string;
     decodedRiddle: string;
-    onComplete: () => void;
+    onComplete: (gameComplete?: boolean) => void;
     disabled: boolean;
     submitFn: (answer: string) => Promise<any>;
 }) {
@@ -149,10 +148,11 @@ function MorseTransmissionPuzzle({
                 message: string;
                 pointsEarned?: number;
                 pointsDeducted?: number;
+                gameComplete?: boolean;
             };
             if (response.success) {
                 setMessage({ type: 'success', text: `${response.message} (+${response.pointsEarned} Points)` });
-                setTimeout(onComplete, 1500);
+                setTimeout(() => onComplete(response.gameComplete), 1500);
             } else {
                 setMessage({ type: 'error', text: `${response.message} (-${response.pointsDeducted} Points)` });
             }
@@ -298,107 +298,6 @@ function MorseTransmissionPuzzle({
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Final Checkpoint Component
-// ═══════════════════════════════════════════════════════════════
-function FinalCheckpointPuzzle({
-    onComplete,
-    disabled,
-    locked
-}: {
-    onComplete: () => void;
-    disabled: boolean;
-    locked: boolean;
-}) {
-    const [code, setCode] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    const handleSubmit = async () => {
-        if (!code.trim()) return;
-        setSubmitting(true);
-        setMessage(null);
-
-        try {
-            const response = await api.submitRound3Complete(code) as {
-                success: boolean;
-                message: string;
-            };
-            if (response.success) {
-                setMessage({ type: 'success', text: response.message });
-                setTimeout(onComplete, 2000);
-            } else {
-                setMessage({ type: 'error', text: response.message });
-            }
-        } catch (err) {
-            setMessage({ type: 'error', text: 'Endpoint validation failed.' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    if (disabled) {
-        return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center shadow-[0_0_15px_rgba(0,255,136,0.1)]">
-                <div className="text-4xl mb-4">✅</div>
-                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">MISSION COMPLETE</div>
-                <p className="text-cyber-green/70 text-sm font-mono tracking-tighter">
-                    All transmissions decoded. Target location confirmed.
-                </p>
-            </div>
-        );
-    }
-
-    if (locked) {
-        return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-border text-center">
-                <div className="text-4xl mb-4">🔒</div>
-                <h3 className="text-xl font-orbitron text-cyber-muted mb-2 uppercase tracking-widest">Final Checkpoint Locked</h3>
-                <p className="text-cyber-muted text-xs font-mono">
-                    Decode all three transmissions to unlock the final checkpoint.
-                </p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6">
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-cyan shadow-[0_0_20px_rgba(0,255,255,0.1)]">
-                <div className="text-center mb-6">
-                    <div className="text-4xl mb-4">🗝️</div>
-                    <h3 className="text-xl font-orbitron text-cyber-cyan mb-2">FINAL TRANSMISSION CODE</h3>
-                    <p className="text-cyber-muted text-sm font-mono tracking-tighter">
-                        Combine all three decoded answers: (ANSWER1)-(ANSWER2)-(ANSWER3)
-                    </p>
-                </div>
-
-                <div className="flex gap-4">
-                    <input
-                        type="text"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.toUpperCase())}
-                        placeholder="ANS1-ANS2-ANS3"
-                        className="input-cyber flex-1 text-center text-lg tracking-widest"
-                    />
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!code.trim() || submitting}
-                        className="btn-neon success"
-                    >
-                        {submitting ? '...' : 'FINALIZE'}
-                    </button>
-                </div>
-
-                {message && (
-                    <div className={`mt-4 p-3 rounded border ${message.type === 'success' ? 'bg-cyber-green/10 border-cyber-green text-cyber-green' : 'bg-cyber-red/10 border-cyber-red text-cyber-red'} font-mono text-sm text-center`}>
-                        {message.text}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════
 // Transmission Data (Morse strings + decoded riddles)
 // ═══════════════════════════════════════════════════════════════
 const TRANSMISSION_DATA = [
@@ -453,23 +352,27 @@ export default function Round3Page() {
         fetchStatus().finally(() => setLoading(false));
     }, [fetchStatus]);
 
-    const handlePhaseComplete = (phaseNum: number) => {
-        setShowAccessMessage({ type: 'granted', message: `Transmission ${phaseNum} Decoded!` });
-        setTimeout(() => {
-            setShowAccessMessage(null);
-            fetchStatus();
-            if (phaseNum < 3) {
-                setActivePhase(phaseNum + 1);
-            }
-        }, 2000);
+    const handlePhaseComplete = (phaseNum: number, gameComplete?: boolean) => {
+        if (gameComplete) {
+            setShowAccessMessage({ type: 'granted', message: 'ALL TRANSMISSIONS DECODED — YOU CRACKED THE ENIGMA MACHINE!' });
+            setTimeout(() => {
+                router.push('/dashboard');
+            }, 2500);
+        } else {
+            setShowAccessMessage({ type: 'granted', message: `Transmission ${phaseNum} Decoded!` });
+            setTimeout(() => {
+                setShowAccessMessage(null);
+                fetchStatus();
+                if (phaseNum < 3) {
+                    setActivePhase(phaseNum + 1);
+                }
+            }, 2000);
+        }
     };
 
-    const handleMissionComplete = () => {
-        setShowAccessMessage({ type: 'granted', message: 'ALL TRANSMISSIONS DECODED — MISSION COMPLETE!' });
-        setTimeout(() => {
-            router.push('/finale');
-        }, 2500);
-    };
+    const handleTimerExpire = useCallback(() => {
+        router.push('/dashboard');
+    }, [router]);
 
     if (loading) {
         return (
@@ -492,7 +395,6 @@ export default function Round3Page() {
         { num: 1, title: 'Transmission 1', complete: status?.phase1 },
         { num: 2, title: 'Transmission 2', complete: status?.phase2 },
         { num: 3, title: 'Transmission 3', complete: status?.phase3 },
-        { num: 4, title: 'Final Checkpoint', complete: status?.completed },
     ];
 
     return (
@@ -531,7 +433,7 @@ export default function Round3Page() {
                         <div className="flex flex-col items-center justify-center px-6 md:px-10 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_15px_rgba(0,255,255,0.3)] z-10 scale-[1.05]">
                             <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-2 font-bold">TIME REMAINING</div>
                             <div className="text-3xl md:text-5xl font-digital text-[#00ffff] leading-none drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]">
-                                <Countdown expiresAt={expiresAt} className="text-[#00ffff]" />
+                                <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} className="text-[#00ffff]" />
                             </div>
                         </div>
                     )}
@@ -628,9 +530,9 @@ export default function Round3Page() {
                                 </span>
                             </div>
                             <div className="flex items-center justify-between border-t border-cyber-border pt-2 mt-2">
-                                <span className="text-cyber-muted">Checkpoint</span>
+                                <span className="text-cyber-muted">Mission</span>
                                 <span className={status?.completed ? 'text-cyber-green' : 'text-cyber-muted'}>
-                                    {status?.completed ? 'VERIFIED' : 'PENDING'}
+                                    {status?.completed ? 'COMPLETE' : 'IN PROGRESS'}
                                 </span>
                             </div>
                         </div>
@@ -649,14 +551,13 @@ export default function Round3Page() {
                             )}
                         </div>
 
-                        {/* Transmission Phases 1-3 */}
                         {activePhase >= 1 && activePhase <= 3 && (
                             <MorseTransmissionPuzzle
                                 key={activePhase}
                                 transmissionNumber={TRANSMISSION_DATA[activePhase - 1].num}
                                 morseCode={TRANSMISSION_DATA[activePhase - 1].morse}
                                 decodedRiddle={TRANSMISSION_DATA[activePhase - 1].decodedRiddle}
-                                onComplete={() => handlePhaseComplete(activePhase)}
+                                onComplete={(gameComplete?: boolean) => handlePhaseComplete(activePhase, gameComplete)}
                                 disabled={
                                     activePhase === 1 ? (status?.phase1 || false) :
                                         activePhase === 2 ? (status?.phase2 || false) :
@@ -666,14 +567,6 @@ export default function Round3Page() {
                             />
                         )}
 
-                        {/* Final Checkpoint */}
-                        {activePhase === 4 && (
-                            <FinalCheckpointPuzzle
-                                onComplete={handleMissionComplete}
-                                disabled={status?.completed || false}
-                                locked={!status?.checkpointUnlocked}
-                            />
-                        )}
                     </div>
 
                     {/* Terminal Output */}

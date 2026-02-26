@@ -149,6 +149,11 @@ interface CountdownProps {
 export function Countdown({ expiresAt, onExpire, className = '' }: CountdownProps) {
     const [timeLeft, setTimeLeft] = useState({ minutes: 60, seconds: 0 });
     const [status, setStatus] = useState<'normal' | 'warning' | 'danger'>('normal');
+    const expiredRef = useRef(false);
+
+    useEffect(() => {
+        expiredRef.current = false;
+    }, [expiresAt]);
 
     useEffect(() => {
         const updateTimer = () => {
@@ -169,7 +174,8 @@ export function Countdown({ expiresAt, onExpire, className = '' }: CountdownProp
                 setStatus('normal');
             }
 
-            if (diff <= 0) {
+            if (diff <= 0 && !expiredRef.current) {
+                expiredRef.current = true;
                 onExpire?.();
             }
         };

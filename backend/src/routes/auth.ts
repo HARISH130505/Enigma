@@ -62,7 +62,7 @@ router.post('/login', async (req: Request, res: Response) => {
             // Create new session if none exists
             sessionId = uuidv4();
             const now = new Date();
-            const expiresAt = new Date(now.getTime() + 45 * 60 * 1000); // 45 minutes per round
+            const expiresAt = new Date(now.getTime() + 40 * 60 * 1000); // 40 minutes for Round 1
 
             const { error: sessionError } = await supabase
                 .from('game_sessions')

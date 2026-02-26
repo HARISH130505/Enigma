@@ -286,19 +286,11 @@ router.post('/evidence/5', authenticateTeam, async (req: AuthRequest, res: Respo
 
             const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
 
-            // Unlock round 2 and reset timer to 60 minutes
-            const newExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-            await supabase
-                .from('game_sessions')
-                .update({ current_round: 2, expires_at: newExpiresAt })
-                .eq('id', req.sessionId);
-
             res.json({
                 success: true,
                 message: 'TRAITOR IDENTIFIED. Investigation complete. Round 1 cleared. (+25 Points)',
                 accessGranted: true,
                 roundComplete: true,
-                nextRound: 2,
                 pointsEarned: POINTS.CORRECT,
                 totalPoints: newPoints,
             });

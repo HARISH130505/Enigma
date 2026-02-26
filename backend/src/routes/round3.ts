@@ -28,8 +28,46 @@ const TRANSMISSIONS = {
     }
 };
 
-// Final checkpoint — all 3 answers combined
-const FINAL_CHECKPOINT = process.env.R3_FINAL_CHECKPOINT || 'COFFIN-SECRET-ECHO';
+// Helper: check if all 3 transmissions are done and auto-complete the game
+async function checkAndCompleteGame(sessionId: string) {
+    const { data: progress } = await supabase
+        .from('round_progress')
+        .select('evidence_1_complete, evidence_2_complete, evidence_3_complete')
+        .eq('session_id', sessionId)
+        .eq('round_number', 3)
+        .single();
+
+    if (progress?.evidence_1_complete && progress?.evidence_2_complete && progress?.evidence_3_complete) {
+        await supabase
+            .from('round_progress')
+            .update({
+                escape_code_unlocked: true,
+                completed_at: new Date().toISOString()
+            })
+            .eq('session_id', sessionId)
+            .eq('round_number', 3);
+
+        // Calculate total points
+        const { data: allProgress } = await supabase
+            .from('round_progress')
+            .select('points')
+            .eq('session_id', sessionId);
+
+        const totalPoints = (allProgress || []).reduce((sum, p) => sum + (p.points || 0), 0);
+
+        await supabase
+            .from('game_sessions')
+            .update({
+                status: 'completed',
+                completed_at: new Date().toISOString(),
+                total_points: totalPoints
+            } as any)
+            .eq('id', sessionId);
+
+        return { complete: true, totalPoints };
+    }
+    return { complete: false, totalPoints: 0 };
+}
 
 // Helper to log attempt
 async function logAttempt(sessionId: string, roundNumber: number, evidenceNumber: number, attemptData: any, isCorrect: boolean) {
@@ -93,11 +131,15 @@ router.post('/phase/1', authenticateTeam, async (req: AuthRequest, res: Response
                 .eq('session_id', req.sessionId)
                 .eq('round_number', 3);
 
+            const gameResult = await checkAndCompleteGame(req.sessionId!);
+
             res.json({
                 success: true,
                 message: `TRANSMISSION 1 DECODED. Target identified. (+${pointsEarned} Points)`,
                 accessGranted: true,
-                pointsEarned
+                pointsEarned,
+                gameComplete: gameResult.complete,
+                finalPoints: gameResult.complete ? gameResult.totalPoints : undefined
             });
         } else {
             const deduction = 5;
@@ -158,11 +200,15 @@ router.post('/phase/2', authenticateTeam, async (req: AuthRequest, res: Response
                 .eq('session_id', req.sessionId)
                 .eq('round_number', 3);
 
+            const gameResult = await checkAndCompleteGame(req.sessionId!);
+
             res.json({
                 success: true,
                 message: `TRANSMISSION 2 DECODED. Intelligence confirmed. (+${pointsEarned} Points)`,
                 accessGranted: true,
-                pointsEarned
+                pointsEarned,
+                gameComplete: gameResult.complete,
+                finalPoints: gameResult.complete ? gameResult.totalPoints : undefined
             });
         } else {
             const deduction = 5;
@@ -223,11 +269,15 @@ router.post('/phase/3', authenticateTeam, async (req: AuthRequest, res: Response
                 .eq('session_id', req.sessionId)
                 .eq('round_number', 3);
 
+            const gameResult = await checkAndCompleteGame(req.sessionId!);
+
             res.json({
                 success: true,
                 message: `TRANSMISSION 3 DECODED. Final coordinates locked. (+${pointsEarned} Points)`,
                 accessGranted: true,
-                pointsEarned
+                pointsEarned,
+                gameComplete: gameResult.complete,
+                finalPoints: gameResult.complete ? gameResult.totalPoints : undefined
             });
         } else {
             const deduction = 5;
@@ -250,72 +300,6 @@ router.post('/phase/3', authenticateTeam, async (req: AuthRequest, res: Response
     }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// Final Checkpoint: Complete Game
-// ═══════════════════════════════════════════════════════════════
-router.post('/complete', authenticateTeam, async (req: AuthRequest, res: Response) => {
-    try {
-        if (!await checkRound3Access(req.sessionId!)) {
-            return res.status(403).json({ error: 'Round 3 is locked.' });
-        }
-
-        const { code } = req.body;
-
-        if (!code) {
-            return res.status(400).json({ error: 'No checkpoint code provided.' });
-        }
-
-        const isCorrect = code.toUpperCase().trim() === FINAL_CHECKPOINT.toUpperCase();
-
-        if (!isCorrect) {
-            return res.json({
-                success: false,
-                message: 'CHECKPOINT FAILED. Combine all three decoded answers (ANS1-ANS2-ANS3).',
-                gameComplete: false
-            });
-        }
-
-        // Mark round and game complete
-        await supabase
-            .from('round_progress')
-            .update({
-                escape_code_unlocked: true,
-                completed_at: new Date().toISOString()
-            })
-            .eq('session_id', req.sessionId)
-            .eq('round_number', 3);
-
-        await supabase
-            .from('game_sessions')
-            .update({
-                status: 'completed',
-                completed_at: new Date().toISOString()
-            })
-            .eq('id', req.sessionId);
-
-        // Calculate total points
-        const { data: allProgress } = await supabase
-            .from('round_progress')
-            .select('points')
-            .eq('session_id', req.sessionId);
-
-        const totalPoints = (allProgress || []).reduce((sum, p) => sum + (p.points || 0), 0);
-
-        await supabase
-            .from('game_sessions')
-            .update({ total_points: totalPoints } as any)
-            .eq('id', req.sessionId);
-
-        res.json({
-            success: true,
-            message: 'ENIGMA SOLVED. All transmissions decoded. Mission complete.',
-            gameComplete: true,
-            finalPoints: totalPoints
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Checkpoint validation failed.' });
-    }
-});
 
 // ═══════════════════════════════════════════════════════════════
 // Get Transmission Data (Morse strings for the frontend)
@@ -364,7 +348,6 @@ router.get('/status', authenticateTeam, async (req: AuthRequest, res: Response) 
             phase2: progress?.evidence_2_complete || false,
             phase3: progress?.evidence_3_complete || false,
             points: progress?.points || 0,
-            checkpointUnlocked: !!(progress?.evidence_1_complete && progress?.evidence_2_complete && progress?.evidence_3_complete),
             completed: !!progress?.completed_at
         });
     } catch (error) {

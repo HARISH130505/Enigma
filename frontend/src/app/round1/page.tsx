@@ -910,14 +910,18 @@ export default function Round1Page() {
             if (levelNum < 5) {
                 setActiveLevel(levelNum + 1);
             } else {
-                // Level 5 = round complete
-                setShowAccessMessage({ type: 'granted', message: 'Round 1 Complete! Proceeding to Round 2...' });
+                // Level 5 = round complete, redirect to unlock page for Round 2
+                setShowAccessMessage({ type: 'granted', message: 'Round 1 Complete! Enter key to unlock Round 2...' });
                 setTimeout(() => {
-                    router.push('/round2');
+                    router.push('/unlock?next=2');
                 }, 2500);
             }
         }, 2000);
     };
+
+    const handleTimerExpire = useCallback(() => {
+        router.push('/unlock?next=2');
+    }, [router]);
 
     if (loading) {
         return (
@@ -972,7 +976,7 @@ export default function Round1Page() {
                     {expiresAt && (
                         <div className="text-center px-6 py-3 bg-cyber-dark rounded border border-cyber-border mr-8">
                             <div className="text-xs text-cyber-muted font-mono mb-1">TIME REMAINING</div>
-                            <Countdown expiresAt={expiresAt} />
+                            <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} />
                         </div>
                     )}
 

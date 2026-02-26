@@ -110,24 +110,24 @@ export default function Dashboard() {
     const rounds = [
         {
             number: 1,
-            name: 'TECH ESCAPE ROOM',
+            name: 'ATTACK ON BLACKRIDGE',
             status: getRoundStatus(1),
             evidenceComplete: progress?.rounds.find(r => r.round_number === 1) ? getEvidenceCount(progress.rounds.find(r => r.round_number === 1)!) : 0,
-            evidenceTotal: 4
+            evidenceTotal: 5
         },
         {
             number: 2,
-            name: 'THE MISCHIEF TRIATHLON',
+            name: 'DIGITAL FORENSICS',
             status: getRoundStatus(2),
             evidenceComplete: progress?.rounds.find(r => r.round_number === 2) ? getEvidenceCount(progress.rounds.find(r => r.round_number === 2)!) : 0,
-            evidenceTotal: 3
+            evidenceTotal: 2
         },
         {
             number: 3,
-            name: 'THE HEXA VAULT',
+            name: 'INTERCEPTED TRANSMISSIONS',
             status: getRoundStatus(3),
             evidenceComplete: progress?.rounds.find(r => r.round_number === 3) ? getEvidenceCount(progress.rounds.find(r => r.round_number === 3)!) : 0,
-            evidenceTotal: 1
+            evidenceTotal: 3
         },
     ];
 
@@ -178,6 +178,41 @@ export default function Dashboard() {
 
                 </div>
             </header>
+
+            {/* Game Complete Celebration */}
+            {progress?.session.status === 'completed' && (
+                <div className="mb-8 p-8 bg-[#0a0e14] border-2 border-[#00ff88] rounded-xl text-center shadow-[0_0_40px_rgba(0,255,136,0.2)] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#00ff88]/5 via-transparent to-[#00ffff]/5" />
+                    <div className="relative z-10">
+                        <div className="text-5xl mb-4">🏆</div>
+                        <h2 className="text-3xl font-orbitron font-black text-[#00ff88] tracking-widest uppercase mb-3 drop-shadow-[0_0_20px_rgba(0,255,136,0.5)]">
+                            YOU CRACKED THE ENIGMA MACHINE!
+                        </h2>
+                        <p className="text-[#8b9db8] font-mono text-sm mb-6">All rounds completed. Mission accomplished, Investigator.</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                            {rounds.map(round => {
+                                const roundData = progress.rounds.find(r => r.round_number === round.number);
+                                return (
+                                    <div key={round.number} className="p-4 bg-[#0d1117] border border-[#00ff88]/30 rounded-lg">
+                                        <div className="text-[10px] text-[#00ff88] font-orbitron uppercase tracking-widest mb-1">Round {round.number}</div>
+                                        <div className="text-sm text-[#8b9db8] font-mono mb-2">{round.name}</div>
+                                        <div className="text-2xl font-orbitron font-bold text-[#00ff88]">{roundData?.points || 0}</div>
+                                        <div className="text-[10px] text-[#8b9db8] font-mono">POINTS</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-[#00ff88]/20">
+                            <div className="text-sm text-[#8b9db8] font-mono mb-1">TOTAL SCORE</div>
+                            <div className="text-4xl font-orbitron font-black text-[#00ffff] drop-shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+                                {totalPoints}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Content */}
@@ -353,12 +388,10 @@ export default function Dashboard() {
                             ))}
 
                             {progress?.session.status === 'completed' && (
-                                <button
-                                    onClick={() => router.push('/finale')}
-                                    className="w-full p-3 bg-cyber-green/10 border border-cyber-green rounded text-cyber-green font-mono text-sm hover:bg-cyber-green/20 transition-colors"
-                                >
-                                    VIEW FINAL REPORT →
-                                </button>
+                                <div className="p-4 bg-cyber-green/10 border border-cyber-green rounded text-center">
+                                    <div className="text-cyber-green font-orbitron font-bold text-sm">🏆 ENIGMA CRACKED</div>
+                                    <p className="text-cyber-green/70 font-mono text-xs mt-1">All rounds completed!</p>
+                                </div>
                             )}
                         </div>
                     </div>

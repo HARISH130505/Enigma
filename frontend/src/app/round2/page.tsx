@@ -7,16 +7,14 @@ import api from '@/lib/api';
 
 interface RoundStatus {
     locked: boolean;
-    phase1: boolean;
-    phase2: boolean;
-    phase3: boolean;
+    level1: boolean;
+    level2: boolean;
     points: number;
-    checkpointUnlocked: boolean;
     completed: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Code Compiler Component (embedded in each phase)
+// Code Compiler Component (embedded in each level)
 // ═══════════════════════════════════════════════════════════════
 function CodeCompiler({ phaseLabel, onUseOutput }: { phaseLabel: string; onUseOutput?: (output: string) => void }) {
     const [language, setLanguage] = useState<'python' | 'java' | 'javascript'>('python');
@@ -162,164 +160,13 @@ function CodeCompiler({ phaseLabel, onUseOutput }: { phaseLabel: string; onUseOu
 
 
 // ═══════════════════════════════════════════════════════════════
-// Phase 1: The 120-Second Shadow
-// ═══════════════════════════════════════════════════════════════
-// Hardcoded log arrays for Phase 1
-const LOG_A = [
-    "35400", "35610", "35970", "36330", "36750", "37110"
-];
-
-const LOG_B = [
-    "35520", "35820", "36090", "36510", "37020"
-];
-
-const LOG_C = [
-    "09:50:30", "10:01:30", "10:08:30", "10:18:30"
-];
-
-const CONVERSION_CHALLENGE = "02:07:00 PM";
-const SORTED_INDEX_CHALLENGE = 25;
-
-function TimeGapPuzzle({
-    onComplete,
-    disabled
-}: {
-    onComplete: () => void;
-    disabled: boolean;
-}) {
-    const [breachKey, setBreachKey] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    const handleSubmit = async () => {
-        if (!breachKey) return;
-        setSubmitting(true);
-        setMessage(null);
-
-        try {
-            const response = await api.submitRound2Phase1({
-                conversionAnswer: '',
-                sortedTimestamp: '',
-                breachKey: parseInt(breachKey)
-            }) as {
-                success: boolean;
-                message: string;
-                pointsEarned?: number;
-                pointsDeducted?: number;
-                feedback?: string[];
-            };
-            if (response.success) {
-                setMessage({ type: 'success', text: response.message });
-                setTimeout(onComplete, 1500);
-            } else {
-                setMessage({ type: 'error', text: response.message });
-            }
-        } catch (err) {
-            setMessage({ type: 'error', text: 'Analysis failed.' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    if (disabled) {
-        return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ KEY 1 ACQUIRED</div>
-                <p className="text-cyber-muted text-sm">120-second shadow identified successfully</p>
-            </div>
-        );
-    }
-
-
-    const totalTimestamps = LOG_A.length + LOG_B.length + LOG_C.length;
-
-    return (
-        <div className="space-y-6">
-            {/* Scenario briefing */}
-            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
-                <div className="flex items-center gap-2 mb-3">
-                    <span className="text-cyber-cyan">🔍</span>
-                    <h3 className="text-cyber-cyan font-mono text-sm font-bold uppercase">Mission Brief</h3>
-                </div>
-                <p className="text-cyber-muted text-xs font-mono leading-relaxed">
-                    The mole accessed the system across three servers to hide their tracks.
-                    You have <span className="text-cyber-text font-bold">{totalTimestamps} timestamps</span> across 3 server logs.
-                    Server C uses HH:MM:SS format. Convert Log C to seconds, merge all into one array, sort them chronologically, and find the two consecutive timestamps
-                    that are exactly <span className="text-cyber-cyan font-bold">120 seconds</span> apart.
-                </p>
-            </div>
-
-            {/* Log arrays displayed in code format */}
-            <div className="space-y-4">
-                <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
-                    <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                        {`Log A\n[${LOG_A.join(', ')}]`}
-                    </pre>
-                </div>
-
-                <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
-                    <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                        {` Log B\n[${LOG_B.join(', ')}]`}
-                    </pre>
-                </div>
-
-                <div className="bg-cyber-darker rounded border border-cyber-border p-4 overflow-x-auto">
-                    <pre className="text-cyber-yellow font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                        {`Log C\n[${LOG_C.map(t => `"${t}"`).join(', ')}]`}
-                    </pre>
-                </div>
-            </div>
-
-            {/* Code Compiler */}
-            <CodeCompiler phaseLabel="Phase 1 — Timestamp Analysis" onUseOutput={(val) => setBreachKey(val)} />
-
-            {/* Single key input */}
-            <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
-                <div className="flex items-center justify-between mb-2">
-                    <label className="text-cyber-muted text-[10px] font-mono uppercase tracking-widest">
-                        Breach Key 1 — Index of the 120-second gap
-                    </label>
-                    <span className="text-[10px] text-cyber-cyan font-mono">INDEX #</span>
-                </div>
-                <p className="text-cyber-muted text-xs font-mono mb-2">
-                    Use the compiler above to merge, convert Log C, sort chronologicaly, and find the two consecutive timestamps exactly <span className="text-cyber-cyan font-bold">120 seconds</span> apart.
-                    Enter the <span className="text-cyber-red font-bold">sum of the index numbers</span> of the two consecutive timestamps.
-                </p>
-                <input
-                    type="number"
-                    value={breachKey}
-                    onChange={(e) => setBreachKey(e.target.value)}
-                    placeholder="Enter index number"
-                    className="input-cyber text-center text-lg font-mono"
-                />
-            </div>
-
-            {message && (
-                <div className={`p-3 rounded border ${message.type === 'success' ? 'bg-cyber-green/10 border-cyber-green text-cyber-green' : 'bg-cyber-red/10 border-cyber-red text-cyber-red'} font-mono text-sm`}>
-                    {message.text}
-                </div>
-            )}
-
-            <button
-                onClick={handleSubmit}
-                disabled={!breachKey || submitting}
-                className="btn-neon w-full"
-            >
-                {submitting ? 'ANALYZING...' : 'UNLOCK KEY 1'}
-            </button>
-        </div>
-    );
-}
-
-
-// ═══════════════════════════════════════════════════════════════
-// Phase 2: Holy Trinity
+// Level 1: Holy Trinity
 // ═══════════════════════════════════════════════════════════════
 function HolyTrinityPuzzle({
     onComplete,
     disabled
 }: {
-    onComplete: () => void;
+    onComplete: (roundComplete: boolean) => void;
     disabled: boolean;
 }) {
     const [rowId, setRowId] = useState('');
@@ -332,7 +179,7 @@ function HolyTrinityPuzzle({
 
     useEffect(() => {
         if (!disabled) {
-            api.getPhase2Data().then((data: any) => {
+            api.getLevel1Data().then((data: any) => {
                 setSystemMap(data.systemMap || []);
                 setLoadingData(false);
             }).catch(() => setLoadingData(false));
@@ -345,7 +192,7 @@ function HolyTrinityPuzzle({
         setMessage(null);
 
         try {
-            const response = await api.submitRound2Phase2({
+            const response = await api.submitRound2Level1({
                 rowId,
                 vowelCheckComplete,
                 lengthMathCheckComplete
@@ -354,10 +201,11 @@ function HolyTrinityPuzzle({
                 message: string;
                 pointsEarned?: number;
                 pointsDeducted?: number;
+                roundComplete?: boolean;
             };
             if (response.success) {
                 setMessage({ type: 'success', text: `${response.message}` });
-                setTimeout(onComplete, 1500);
+                setTimeout(() => onComplete(response.roundComplete || false), 1500);
             } else {
                 setMessage({ type: 'error', text: `${response.message}` });
             }
@@ -371,7 +219,7 @@ function HolyTrinityPuzzle({
     if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ KEY 2 ACQUIRED</div>
+                <div className="text-cyber-green text-lg font-mono mb-2">✓ BREACH KEY 1 ACQUIRED</div>
                 <p className="text-cyber-muted text-sm">Holy Trinity rules applied successfully</p>
             </div>
         );
@@ -453,12 +301,12 @@ function HolyTrinityPuzzle({
                 </div>
 
                 <div className="mb-6">
-                    <CodeCompiler phaseLabel="Phase 2 — System Map Filter" onUseOutput={(val) => setRowId(val)} />
+                    <CodeCompiler phaseLabel="Level 1 — System Map Filter" onUseOutput={(val) => setRowId(val)} />
                 </div>
 
                 <div>
                     <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
-                        Row ID (Breach Key 2)
+                        Row ID (Breach Key 1)
                     </label>
                     <input
                         type="text"
@@ -481,7 +329,7 @@ function HolyTrinityPuzzle({
                 disabled={!rowId || submitting}
                 className="btn-neon w-full"
             >
-                {submitting ? 'VALIDATING...' : 'UNLOCK KEY 2'}
+                {submitting ? 'VALIDATING...' : 'UNLOCK BREACH KEY 1'}
             </button>
         </div>
     );
@@ -489,13 +337,13 @@ function HolyTrinityPuzzle({
 
 
 // ═══════════════════════════════════════════════════════════════
-// Phase 3: The Hexa Vault
+// Level 2: The Hexa Vault
 // ═══════════════════════════════════════════════════════════════
 function HexaVaultPuzzle({
     onComplete,
     disabled
 }: {
-    onComplete: () => void;
+    onComplete: (roundComplete: boolean) => void;
     disabled: boolean;
 }) {
     const [riddleAnswer, setRiddleAnswer] = useState('');
@@ -512,7 +360,7 @@ function HexaVaultPuzzle({
         setMessage(null);
 
         try {
-            const response = await api.submitRound2Phase3({
+            const response = await api.submitRound2Level2({
                 riddleAnswer,
                 hexCleaningComplete,
                 hexDecodingComplete
@@ -521,10 +369,11 @@ function HexaVaultPuzzle({
                 message: string;
                 pointsEarned?: number;
                 pointsDeducted?: number;
+                roundComplete?: boolean;
             };
             if (response.success) {
                 setMessage({ type: 'success', text: `${response.message}` });
-                setTimeout(onComplete, 1500);
+                setTimeout(() => onComplete(response.roundComplete || false), 1500);
             } else {
                 setMessage({ type: 'error', text: `${response.message}` });
             }
@@ -538,7 +387,7 @@ function HexaVaultPuzzle({
     if (disabled) {
         return (
             <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center">
-                <div className="text-cyber-green text-lg font-mono mb-2">✓ KEY 3 ACQUIRED</div>
+                <div className="text-cyber-green text-lg font-mono mb-2">✓ BREACH KEY 2 ACQUIRED</div>
                 <p className="text-cyber-muted text-sm">Hexa Vault decrypted successfully</p>
             </div>
         );
@@ -573,12 +422,12 @@ function HexaVaultPuzzle({
                 </div>
 
                 <div className="mb-6">
-                    <CodeCompiler phaseLabel="Phase 3 — Hex Decryption" onUseOutput={(val) => setRiddleAnswer(val.toUpperCase())} />
+                    <CodeCompiler phaseLabel="Level 2 — Hex Decryption" onUseOutput={(val) => setRiddleAnswer(val.toUpperCase())} />
                 </div>
 
                 <div>
                     <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
-                        Layer 3: Riddle Answer (15 pts)
+                        Layer 3: Riddle Answer (Breach Key 2)
                     </label>
                     <input
                         type="text"
@@ -601,104 +450,8 @@ function HexaVaultPuzzle({
                 disabled={!riddleAnswer || submitting}
                 className="btn-neon w-full"
             >
-                {submitting ? 'DECRYPTING...' : 'UNLOCK KEY 3'}
+                {submitting ? 'DECRYPTING...' : 'UNLOCK BREACH KEY 2'}
             </button>
-        </div>
-    );
-}
-
-
-// ═══════════════════════════════════════════════════════════════
-// Final Challenge: Round 2 Checkpoint
-// ═══════════════════════════════════════════════════════════════
-function FinalChallenge({
-    unlocked,
-    completed,
-    onComplete
-}: {
-    unlocked: boolean;
-    completed: boolean;
-    onComplete: () => void;
-}) {
-    const [code, setCode] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    const handleSubmit = async () => {
-        if (!code.trim()) return;
-        setSubmitting(true);
-        setMessage(null);
-
-        try {
-            const response = await api.submitRound2Checkpoint(code) as { success: boolean; message: string };
-            if (response.success) {
-                setMessage({ type: 'success', text: response.message });
-                setTimeout(onComplete, 1500);
-            } else {
-                setMessage({ type: 'error', text: response.message });
-            }
-        } catch (err) {
-            setMessage({ type: 'error', text: 'Validation failed.' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    if (completed) {
-        return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-green text-center shadow-[0_0_15px_rgba(0,255,136,0.1)]">
-                <div className="text-4xl mb-4">✅</div>
-                <div className="text-cyber-green text-xl font-orbitron font-bold mb-2 tracking-widest uppercase">CHECKPOINT VERIFIED</div>
-                <p className="text-cyber-green/70 text-sm font-mono tracking-tighter">
-                    Round 2 successfully completed. Awaiting further orders.
-                </p>
-            </div>
-        );
-    }
-
-    if (!unlocked) {
-        return (
-            <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-border opacity-50">
-                <div className="text-center py-8">
-                    <div className="text-4xl mb-4">🔒</div>
-                    <h3 className="text-xl font-orbitron text-cyber-muted mb-2 uppercase">Checkpoint Locked</h3>
-                    <p className="text-cyber-muted text-xs font-mono">Complete all 3 phases to unlock Round 3</p>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="p-6 bg-cyber-dark rounded-lg border border-cyber-cyan animate-glow shadow-[0_0_30px_rgba(0,255,255,0.15)] relative overflow-hidden">
-            <div className="text-center mb-8">
-                <div className="text-4xl mb-4">🔓</div>
-                <h3 className="text-2xl font-orbitron text-cyber-cyan mb-2">AUDIT TOKEN</h3>
-                <p className="text-cyber-muted text-sm font-mono tracking-tighter">Combine all three keys (KEY1-KEY2-KEY3)</p>
-            </div>
-
-            <div className="space-y-6">
-                <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    placeholder="KEY1-KEY2-KEY3"
-                    className="input-cyber text-center text-xl tracking-[0.2em] font-bold"
-                />
-
-                <button
-                    onClick={handleSubmit}
-                    disabled={!code.trim() || submitting}
-                    className="btn-neon w-full success"
-                >
-                    {submitting ? 'VERIFYING...' : 'PROCEED TO ROUND 3'}
-                </button>
-            </div>
-
-            {message && (
-                <div className={`mt-4 p-3 rounded border ${message.type === 'success' ? 'bg-cyber-green/10 border-cyber-green text-cyber-green' : 'bg-cyber-red/10 border-cyber-red text-cyber-red'} font-mono text-sm text-center`}>
-                    {message.text}
-                </div>
-            )}
         </div>
     );
 }
@@ -712,7 +465,7 @@ export default function Round2Page() {
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<RoundStatus | null>(null);
     const [expiresAt, setExpiresAt] = useState<string | null>(null);
-    const [activePhase, setActivePhase] = useState<number>(1);
+    const [activeLevel, setActiveLevel] = useState<number>(1);
     const [showAccessMessage, setShowAccessMessage] = useState<{ type: 'granted' | 'denied'; message: string } | null>(null);
 
     const fetchStatus = useCallback(async () => {
@@ -738,39 +491,42 @@ export default function Round2Page() {
         fetchStatus().finally(() => setLoading(false));
     }, [fetchStatus]);
 
-    const handlePhaseComplete = (phaseNum: number) => {
-        setShowAccessMessage({ type: 'granted', message: `Key ${phaseNum} Acquired!` });
-        setTimeout(() => {
-            setShowAccessMessage(null);
-            fetchStatus();
-            if (phaseNum < 3) {
-                setActivePhase(phaseNum + 1);
-            }
-        }, 2000);
+    const handleLevelComplete = (levelNum: number, roundComplete: boolean) => {
+        if (roundComplete) {
+            setShowAccessMessage({ type: 'granted', message: 'Digital Forensics Complete! Enter key to unlock Round 3...' });
+            setTimeout(() => {
+                router.push('/unlock?next=3');
+            }, 2500);
+        } else {
+            setShowAccessMessage({ type: 'granted', message: `Breach Key ${levelNum} Acquired!` });
+            setTimeout(() => {
+                setShowAccessMessage(null);
+                fetchStatus();
+                if (levelNum < 2) {
+                    setActiveLevel(levelNum + 1);
+                }
+            }, 2000);
+        }
     };
 
-    const handleAllComplete = () => {
-        setShowAccessMessage({ type: 'granted', message: 'Mischief Triathlon Complete! Proceeding to Round 3...' });
-        setTimeout(() => {
-            router.push('/round3');
-        }, 2500);
-    };
+    const handleTimerExpire = useCallback(() => {
+        router.push('/unlock?next=3');
+    }, [router]);
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-cyber-black">
                 <div className="text-center">
                     <div className="loader mx-auto mb-4" />
-                    <p className="text-cyber-cyan font-mono animate-pulse">Synchronizing Triathlon Data...</p>
+                    <p className="text-cyber-cyan font-mono animate-pulse">Synchronizing Forensic Data...</p>
                 </div>
             </div>
         );
     }
 
-    const phases = [
-        { num: 1, title: '120-Second Shadow', complete: status?.phase1 },
-        { num: 2, title: 'Holy Trinity', complete: status?.phase2 },
-        { num: 3, title: 'Hexa Vault', complete: status?.phase3 },
+    const levels = [
+        { num: 1, title: 'Holy Trinity', complete: status?.level1 },
+        { num: 2, title: 'The Hexa Vault', complete: status?.level2 },
     ];
 
     return (
@@ -793,7 +549,7 @@ export default function Round2Page() {
                         &lt; RETURN TO COMMAND CENTER
                     </button>
                     <h1 className="text-4xl font-orbitron font-black text-cyber-cyan tracking-tighter">
-                        ROUND 2: <span className="text-cyber-text">THE MISCHIEF TRIATHLON</span>
+                        ROUND 2: <span className="text-cyber-text">DIGITAL FORENSICS</span>
                     </h1>
                 </div>
 
@@ -809,7 +565,7 @@ export default function Round2Page() {
                         <div className="flex flex-col items-center justify-center px-6 md:px-10 py-5 border-2 border-[#00ffff] rounded bg-[#0a0e14]/80 shadow-[0_0_15px_rgba(0,255,255,0.3)] z-10 scale-[1.05]">
                             <div className="text-[10px] md:text-sm text-[#00ffff] font-orbitron tracking-widest uppercase mb-2 font-bold">TIME REMAINING</div>
                             <div className="text-3xl md:text-5xl font-digital text-[#00ffff] leading-none drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]">
-                                <Countdown expiresAt={expiresAt} className="text-[#00ffff]" />
+                                <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} className="text-[#00ffff]" />
                             </div>
                         </div>
                     )}
@@ -828,29 +584,29 @@ export default function Round2Page() {
                 {/* Side Navigation */}
                 <div className="lg:col-span-3 space-y-6">
                     <div className="card-cyber">
-                        <h2 className="text-xs font-orbitron font-bold text-cyber-cyan mb-4 uppercase tracking-[0.2em]">Triathlon Phases</h2>
+                        <h2 className="text-xs font-orbitron font-bold text-cyber-cyan mb-4 uppercase tracking-[0.2em]">Investigation Levels</h2>
                         <div className="space-y-3">
-                            {phases.map((phase) => (
+                            {levels.map((level) => (
                                 <button
-                                    key={phase.num}
-                                    onClick={() => setActivePhase(phase.num)}
+                                    key={level.num}
+                                    onClick={() => setActiveLevel(level.num)}
                                     className={`
                                         w-full p-4 rounded-lg border text-left transition-all font-mono text-sm relative group
-                                        ${activePhase === phase.num
+                                        ${activeLevel === level.num
                                             ? 'border-cyber-cyan bg-cyber-cyan/10 text-cyber-cyan'
-                                            : phase.complete
+                                            : level.complete
                                                 ? 'border-cyber-green bg-cyber-green/5 text-cyber-green'
                                                 : 'border-cyber-border hover:border-cyber-blue/50 text-cyber-muted'}
                                     `}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-2 h-2 rounded-full ${phase.complete ? 'bg-cyber-green' : 'bg-current opacity-30'} group-hover:animate-pulse`} />
+                                        <div className={`w-2 h-2 rounded-full ${level.complete ? 'bg-cyber-green' : 'bg-current opacity-30'} group-hover:animate-pulse`} />
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] uppercase opacity-50">Phase 0{phase.num}</span>
-                                            <span className="font-bold">{phase.title}</span>
+                                            <span className="text-[10px] uppercase opacity-50">Level 0{level.num}</span>
+                                            <span className="font-bold">{level.title}</span>
                                         </div>
                                     </div>
-                                    {phase.complete && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg">✓</span>}
+                                    {level.complete && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg">✓</span>}
                                 </button>
                             ))}
                         </div>
@@ -861,68 +617,52 @@ export default function Round2Page() {
                         <div className="text-[10px] font-mono text-cyber-muted space-y-1">
                             <p>&gt; Breach Detected: 29m ago</p>
                             <p>&gt; Countermeasures: Active</p>
-                            <p>&gt; Progress: {Math.round([status?.phase1, status?.phase2, status?.phase3].filter(Boolean).length / 3 * 100)}%</p>
+                            <p>&gt; Progress: {Math.round([status?.level1, status?.level2].filter(Boolean).length / 2 * 100)}%</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Main Content Area */}
-                <div className="lg:col-span-6">
+                <div className="lg:col-span-9">
                     <div className="card-cyber min-h-[500px]">
                         <div className="flex items-center justify-between mb-8 border-b border-cyber-border pb-4">
                             <h2 className="text-2xl font-orbitron font-bold text-cyber-text flex items-center gap-3">
-                                <span className="text-cyber-cyan font-black">0{activePhase}</span>
-                                {phases[activePhase - 1].title}
+                                <span className="text-cyber-cyan font-black">0{activeLevel}</span>
+                                {levels[activeLevel - 1].title}
                             </h2>
-                            {phases[activePhase - 1].complete && (
+                            {levels[activeLevel - 1].complete && (
                                 <span className="bg-cyber-green/20 text-cyber-green text-[10px] px-2 py-1 rounded border border-cyber-green/50 font-bold font-mono">
                                     VERIFIED
                                 </span>
                             )}
                         </div>
 
-                        {activePhase === 1 && (
-                            <TimeGapPuzzle
-                                onComplete={() => handlePhaseComplete(1)}
-                                disabled={status?.phase1 || false}
-                            />
-                        )}
-
-                        {activePhase === 2 && (
+                        {activeLevel === 1 && (
                             <HolyTrinityPuzzle
-                                onComplete={() => handlePhaseComplete(2)}
-                                disabled={status?.phase2 || false}
+                                onComplete={(roundComplete) => handleLevelComplete(1, roundComplete)}
+                                disabled={status?.level1 || false}
                             />
                         )}
 
-                        {activePhase === 3 && (
+                        {activeLevel === 2 && (
                             <HexaVaultPuzzle
-                                onComplete={() => handlePhaseComplete(3)}
-                                disabled={status?.phase3 || false}
+                                onComplete={(roundComplete) => handleLevelComplete(2, roundComplete)}
+                                disabled={status?.level2 || false}
                             />
                         )}
                     </div>
-                </div>
 
-                {/* Final Answer Column */}
-                <div className="lg:col-span-3">
-                    <FinalChallenge
-                        unlocked={status?.checkpointUnlocked || false}
-                        completed={status?.completed || false}
-                        onComplete={handleAllComplete}
-                    />
-
+                    {/* Terminal Output */}
                     <div className="mt-6">
                         <Terminal
                             title="AUDIT_CORE"
                             lines={[
                                 { type: 'prompt', text: 'Waiting for keys...' },
-                                { type: 'output', text: `KEY_1_STATE: ${status?.phase1 ? 'STABLE' : 'LOCKED'}` },
-                                { type: 'output', text: `KEY_2_STATE: ${status?.phase2 ? 'STABLE' : 'LOCKED'}` },
-                                { type: 'output', text: `KEY_3_STATE: ${status?.phase3 ? 'STABLE' : 'LOCKED'}` },
+                                { type: 'output', text: `KEY_1_STATE: ${status?.level1 ? 'STABLE' : 'LOCKED'}` },
+                                { type: 'output', text: `KEY_2_STATE: ${status?.level2 ? 'STABLE' : 'LOCKED'}` },
                                 {
-                                    type: status?.checkpointUnlocked ? 'success' : 'error',
-                                    text: status?.checkpointUnlocked ? 'CHECKPOINT_READY' : 'INSUFFICIENT_DATA'
+                                    type: status?.completed ? 'success' : 'error',
+                                    text: status?.completed ? 'ROUND COMPLETE — ADVANCING TO ROUND 3' : 'AWAITING KEY ACQUISITION'
                                 },
                             ]}
                         />

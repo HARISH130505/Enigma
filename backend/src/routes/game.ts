@@ -4,6 +4,18 @@ import { authenticateTeam, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
+// Unlock keys for each round
+const UNLOCK_KEYS: Record<number, string> = {
+    2: process.env.UNLOCK_KEY_R2 || 'SIGABA',
+    3: process.env.UNLOCK_KEY_R3 || 'LORENZ',
+};
+
+const ROUND_DURATIONS: Record<number, number> = {
+    1: 40 * 60 * 1000,  // 40 minutes
+    2: 40 * 60 * 1000,  // 40 minutes
+    3: 30 * 60 * 1000,  // 30 minutes
+};
+
 // Get current game progress
 router.get('/progress', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
@@ -156,6 +168,65 @@ router.get('/briefing', authenticateTeam, async (req: AuthRequest, res: Response
             "Identify the traitor among the officers"
         ]
     });
+});
+
+// Unlock next round with a key
+router.post('/unlock-round', authenticateTeam, async (req: AuthRequest, res: Response) => {
+    try {
+        const { targetRound, key } = req.body;
+
+        if (!targetRound || !key) {
+            return res.status(400).json({ error: 'Target round and key are required.' });
+        }
+
+        const roundNum = parseInt(targetRound);
+        if (roundNum < 2 || roundNum > 3) {
+            return res.status(400).json({ error: 'Invalid target round.' });
+        }
+
+        // Check the key
+        const correctKey = UNLOCK_KEYS[roundNum];
+        if (key.toUpperCase().trim() !== correctKey) {
+            return res.json({
+                success: false,
+                message: 'INCORRECT KEY. Access denied.',
+            });
+        }
+
+        // Verify current round is the previous one
+        const { data: session } = await supabase
+            .from('game_sessions')
+            .select('current_round')
+            .eq('id', req.sessionId)
+            .single();
+
+        if (!session || session.current_round >= roundNum) {
+            return res.json({
+                success: true,
+                message: `Round ${roundNum} is already unlocked.`,
+                alreadyUnlocked: true,
+            });
+        }
+
+        // Advance to the next round and reset timer
+        const newExpiresAt = new Date(Date.now() + ROUND_DURATIONS[roundNum]).toISOString();
+        await supabase
+            .from('game_sessions')
+            .update({
+                current_round: roundNum,
+                expires_at: newExpiresAt,
+            })
+            .eq('id', req.sessionId);
+
+        res.json({
+            success: true,
+            message: `Round ${roundNum} unlocked! Timer reset.`,
+            nextRound: roundNum,
+        });
+    } catch (error) {
+        console.error('Unlock round error:', error);
+        res.status(500).json({ error: 'Failed to unlock round.' });
+    }
 });
 
 export default router;
