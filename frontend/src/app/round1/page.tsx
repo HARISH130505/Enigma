@@ -305,29 +305,24 @@ function JigsawPuzzle({
                     A torn map fragment was recovered from the furnace. Reconstruct it to reveal the compromised strike location.
                 </p>
 
-                {/* Embedded jigsaw puzzle */}
-                <div className="bg-cyber-darker rounded border border-cyber-cyan/30 mb-4 overflow-hidden">
-                    <div className="p-3 border-b border-cyber-cyan/20">
-                        <p className="text-cyber-text text-sm font-mono text-center">
-                            🧩 Reconstruct the torn map fragment below to identify the compromised strike location.
-                        </p>
-                    </div>
-                    <div className="w-full" style={{ minHeight: '600px' }}>
-                        <iframe
-                            src="https://puzzel.org/en/jigsaw/embed?p=-OmOrn0qtAtCLhGa71xx"
-                            width="100%"
-                            height="600"
-                            frameBorder="0"
-                            style={{ border: 'none', display: 'block' }}
-                            title="Map Fragment Jigsaw Puzzle"
-                            allow="fullscreen"
-                        />
-                    </div>
+                {/* External puzzle link */}
+                <div className="text-center p-6 bg-cyber-darker rounded border border-cyber-cyan/30 mb-4">
+                    <p className="text-cyber-text text-sm font-mono mb-4">
+                        Click the button below to open the jigsaw puzzle. Reconstruct the map fragment to identify the target.
+                    </p>
+                    <a
+                        href="https://puzzel.org/en/jigsaw/play?p=-OmDvPAFTJeNTOz155DB"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-8 py-3 bg-cyber-cyan/20 border-2 border-cyber-cyan text-cyber-cyan font-orbitron font-bold text-sm tracking-wider rounded hover:bg-cyber-cyan/30 hover:shadow-[0_0_20px_rgba(0,255,255,0.3)] transition-all duration-300"
+                    >
+                        🧩 OPEN MAP FRAGMENT PUZZLE
+                    </a>
                 </div>
 
                 <div className="p-3 bg-cyber-orange/10 border border-cyber-orange/30 rounded">
                     <p className="text-cyber-orange text-xs font-mono text-center">
-                        ⚠ After completing the puzzle, click <strong>MARK AS COMPLETED</strong> below to proceed.
+                        ⚠ After completing the puzzle, verify with your mentor, then click <strong>MARK AS COMPLETED</strong> below.
                     </p>
                 </div>
             </div>
