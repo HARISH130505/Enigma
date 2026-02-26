@@ -789,9 +789,87 @@ function TraitorIdentificationPuzzle({
         );
     }
 
+    const movementLog = [
+        { id: 'GF-7359124', times: ['Control Room', 'Radar Unit', 'Radar Unit', 'Radar Unit', 'Control Room'] },
+        { id: 'CF-6548592', times: ['Control Room', 'Radar Unit', 'Radar Unit', 'Signal Chamber', 'Control Room'] },
+        { id: 'NF-1956757', times: ['War Archive', 'War Archive', 'War Archive', 'War Archive', 'War Archive'] },
+        { id: 'CF-7359214', times: ['Control Room', 'Radar Unit', 'Radar Unit', 'Radar Unit', 'Control Room'] },
+        { id: 'AF-8735962', times: ['Control Room', 'Radar Unit', 'Radar Unit', 'Radar Unit', 'Control Room'] },
+        { id: 'CF-8237593', times: ['Barracks', 'Armory', 'Armory', 'Armory', 'Barracks'] },
+        { id: 'AR-9856242', times: ['War Archive', 'War Archive', 'War Archive', 'War Archive', 'War Archive'] },
+        { id: 'CF-8735962', times: ['Control Room', 'Radar Unit', 'Radar Unit', 'Signal Chamber', 'Control Room'] },
+        { id: 'CF-2207359', times: ['Control Room', 'Radar Unit', 'Radar Unit', 'Radar Unit', 'Control Room'] },
+        { id: 'NF-9359456', times: ['Control Room', 'Control Room', 'Control Room', 'Control Room', 'Control Room'] },
+    ];
+
+    const timeHeaders = ['03:30', '03:45', '04:00', '04:15', '04:30'];
+
     return (
         <div className="space-y-4">
             <StorylineDisplay level={5} />
+
+            {/* ═══ Movement Log Table ═══ */}
+            <div className="rounded-xl overflow-hidden border-2 border-[#8B7355]/60 shadow-[0_0_30px_rgba(139,115,85,0.15)]"
+                style={{ background: 'linear-gradient(135deg, #2a2318 0%, #1e1a12 50%, #2a2318 100%)' }}>
+                {/* Header */}
+                <div className="text-center py-5 px-4 border-b border-[#8B7355]/40"
+                    style={{ background: 'linear-gradient(180deg, #3a3020 0%, #2a2318 100%)' }}>
+                    <div className="inline-block px-4 py-1 border-2 border-[#cc3333] rounded text-[10px] font-bold tracking-[0.3em] text-[#cc3333] uppercase mb-2">
+                        ★ TOP SECRET ★
+                    </div>
+                    <div className="text-[10px] text-[#8B7355] tracking-[0.25em] uppercase font-bold mb-1">
+                        ■ Allied Command — Authorized Personnel Only ■
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold text-[#d4c5a0] tracking-wider uppercase"
+                        style={{ fontFamily: "'Georgia', serif", textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+                        ★ Movement Log (03:30–04:30) ★
+                    </h3>
+                    <div className="text-[#8B7355] text-xs mt-1">★ &nbsp; ★</div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm font-mono">
+                        <thead>
+                            <tr style={{ background: 'linear-gradient(180deg, #4a3d28 0%, #3a3020 100%)' }}>
+                                <th className="px-3 py-3 text-left text-[11px] text-[#d4c5a0] uppercase tracking-widest font-bold border-b-2 border-[#8B7355]/50 whitespace-nowrap">
+                                    Officer ID
+                                </th>
+                                {timeHeaders.map(t => (
+                                    <th key={t} className="px-3 py-3 text-center text-[11px] text-[#d4c5a0] uppercase tracking-widest font-bold border-b-2 border-[#8B7355]/50">
+                                        {t}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {movementLog.map((officer, idx) => (
+                                <tr key={officer.id}
+                                    className="border-b border-[#8B7355]/20 hover:bg-[#8B7355]/10 transition-colors"
+                                    style={{ background: idx % 2 === 0 ? 'rgba(139,115,85,0.05)' : 'transparent' }}>
+                                    <td className="px-3 py-2.5 text-[#d4c5a0] font-bold text-xs whitespace-nowrap">
+                                        {officer.id}
+                                    </td>
+                                    {officer.times.map((loc, i) => (
+                                        <td key={i} className="px-3 py-2.5 text-center text-[#b8a882] text-xs whitespace-nowrap">
+                                            {loc}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center py-3 border-t border-[#8B7355]/40"
+                    style={{ background: 'linear-gradient(180deg, #2a2318 0%, #3a3020 100%)' }}>
+                    <p className="text-[10px] text-[#8B7355] tracking-[0.2em] uppercase font-bold">
+                        ★ &nbsp; Allied High Command — Field Document No. 8 &nbsp; ★
+                    </p>
+                </div>
+            </div>
+
             <div className="p-4 bg-cyber-dark rounded border border-cyber-border">
 
                 {/* Q1: Regiment Selection */}

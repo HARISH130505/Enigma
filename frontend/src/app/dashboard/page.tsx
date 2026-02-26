@@ -11,6 +11,7 @@ interface RoundProgress {
     evidence_2_complete: boolean;
     evidence_3_complete: boolean;
     evidence_4_complete: boolean;
+    evidence_5_complete?: boolean;
     escape_code_unlocked: boolean;
     points: number;
     completed_at: string | null;
@@ -73,20 +74,30 @@ export default function Dashboard() {
         if (round.evidence_2_complete) count++;
         if (round.evidence_3_complete) count++;
         if (round.evidence_4_complete) count++;
+        if (round.evidence_5_complete) count++;
         return count;
     };
 
-    const getRoundStatus = (roundNum: number): 'locked' | 'active' | 'complete' => {
+    const getRoundStatus = (roundNum: number): 'locked' | 'active' | 'complete' | 'needs-unlock' => {
         if (!progress) return 'locked';
         const round = progress.rounds.find(r => r.round_number === roundNum);
         if (round?.completed_at) return 'complete';
         if (progress.session.currentRound >= roundNum) return 'active';
+        // Check if previous round is completed but this round is not yet unlocked
+        if (roundNum > 1) {
+            const prevRound = progress.rounds.find(r => r.round_number === roundNum - 1);
+            if (prevRound?.completed_at) return 'needs-unlock';
+        }
         return 'locked';
     };
 
     const navigateToRound = (roundNum: number) => {
         const status = getRoundStatus(roundNum);
         if (status === 'locked') return;
+        if (status === 'needs-unlock') {
+            router.push(`/unlock?next=${roundNum}`);
+            return;
+        }
         router.push(`/round${roundNum}`);
     };
 
@@ -284,21 +295,27 @@ export default function Dashboard() {
                                             ? 'border-cyber-green bg-cyber-green/5 hover:bg-cyber-green/10'
                                             : round.status === 'active'
                                                 ? 'border-cyber-cyan bg-cyber-cyan/5 hover:bg-cyber-cyan/10 hover:shadow-lg hover:shadow-cyber-cyan/20'
-                                                : 'border-cyber-border bg-cyber-dark/50 opacity-50 cursor-not-allowed'}
+                                                : round.status === 'needs-unlock'
+                                                    ? 'border-[#ff9800] bg-[#ff9800]/5 hover:bg-[#ff9800]/10 hover:shadow-lg hover:shadow-[#ff9800]/20 cursor-pointer'
+                                                    : 'border-cyber-border bg-cyber-dark/50 opacity-50 cursor-not-allowed'}
                   `}
                                 >
                                     <div className="flex items-center justify-between mb-3">
                                         <span className={`
                       text-3xl font-orbitron font-black
                       ${round.status === 'complete' ? 'text-cyber-green' :
-                                                round.status === 'active' ? 'text-cyber-cyan' : 'text-cyber-muted'}
+                                                round.status === 'active' ? 'text-cyber-cyan' :
+                                                    round.status === 'needs-unlock' ? 'text-[#ff9800]' : 'text-cyber-muted'}
                     `}>
-                                            {round.status === 'complete' ? '✓' : `0${round.number}`}
+                                            {round.status === 'complete' ? '✓' : round.status === 'needs-unlock' ? '🔐' : `0${round.number}`}
                                         </span>
                                         <span className={`badge ${round.status === 'complete' ? 'badge-complete' :
-                                            round.status === 'active' ? 'badge-active' : 'badge-locked'
-                                            }`}>
-                                            {round.status.toUpperCase()}
+                                            round.status === 'active' ? 'badge-active' :
+                                                round.status === 'needs-unlock' ? 'badge-active' : 'badge-locked'
+                                            }`}
+                                            style={round.status === 'needs-unlock' ? { borderColor: '#ff9800', color: '#ff9800' } : {}}
+                                        >
+                                            {round.status === 'needs-unlock' ? 'UNLOCK' : round.status.toUpperCase()}
                                         </span>
                                     </div>
 
@@ -367,7 +384,7 @@ export default function Dashboard() {
                             <span className="text-cyber-cyan">◆</span> PROGRESS
                         </h2>
 
-                        <ProgressTracker rounds={rounds} />
+                        <ProgressTracker rounds={rounds.map(r => ({ ...r, status: r.status === 'needs-unlock' ? 'locked' as const : r.status }))} />
                     </div>
 
                     {/* Quick Actions */}
@@ -384,6 +401,16 @@ export default function Dashboard() {
                                     className="w-full p-3 bg-cyber-cyan/10 border border-cyber-cyan rounded text-cyber-cyan font-mono text-sm hover:bg-cyber-cyan/20 transition-colors"
                                 >
                                     CONTINUE ROUND {round.number} →
+                                </button>
+                            ))}
+
+                            {rounds.filter(r => r.status === 'needs-unlock').map(round => (
+                                <button
+                                    key={`unlock-${round.number}`}
+                                    onClick={() => navigateToRound(round.number)}
+                                    className="w-full p-3 bg-[#ff9800]/10 border border-[#ff9800] rounded text-[#ff9800] font-mono text-sm hover:bg-[#ff9800]/20 transition-colors"
+                                >
+                                    🔐 UNLOCK ROUND {round.number} →
                                 </button>
                             ))}
 
