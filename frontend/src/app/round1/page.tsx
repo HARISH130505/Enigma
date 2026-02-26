@@ -1143,8 +1143,8 @@ export default function Round1Page() {
                 <div className="lg:col-span-3">
                     <div className="card-cyber min-h-[500px]">
                         <div className="flex items-center justify-between mb-8 border-b border-cyber-border pb-4">
-                            <h2 className="text-2xl font-orbitron font-bold text-cyber-text flex items-center gap-4">
-                                <span className="text-cyber-cyan font-black">0{activeLevel}</span>
+                            <h2 className="text-2xl font-orbitron font-bold text-cyber-text flex items-center">
+                                <span className="text-cyber-cyan font-black mr-3">0{activeLevel}</span>
                                 {levels[activeLevel - 1].title}
                             </h2>
                             {levels[activeLevel - 1].complete && (
