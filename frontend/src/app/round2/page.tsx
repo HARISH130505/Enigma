@@ -291,12 +291,12 @@ function HolyTrinityPuzzle({
                     <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
                         <input type="checkbox" checked={vowelCheckComplete} onChange={() => setVowelCheckComplete(!vowelCheckComplete)} className="hidden" />
                         <span className={`w-3 h-3 border ${vowelCheckComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">Vowel count logic (exactly 2: O, I) (10 pts)</span>
+                        <span className="text-xs font-mono text-cyber-muted">Correct script logic for Vowel Count, Length, Math (10 pts)</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
                         <input type="checkbox" checked={lengthMathCheckComplete} onChange={() => setLengthMathCheckComplete(!lengthMathCheckComplete)} className="hidden" />
                         <span className={`w-3 h-3 border ${lengthMathCheckComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">Length (4 chars) + Math (÷3) rules (10 pts)</span>
+                        <span className="text-xs font-mono text-cyber-muted">Correct debugging (20 pts)</span>
                     </label>
                 </div>
 
@@ -306,7 +306,7 @@ function HolyTrinityPuzzle({
 
                 <div>
                     <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
-                        Row ID (Breach Key 1)
+                        Successfully identifying the specific Row ID for the folder (20 pts) (Breach Key 1)
                     </label>
                     <input
                         type="text"
@@ -412,12 +412,12 @@ function HexaVaultPuzzle({
                     <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
                         <input type="checkbox" checked={hexCleaningComplete} onChange={() => setHexCleaningComplete(!hexCleaningComplete)} className="hidden" />
                         <span className={`w-3 h-3 border ${hexCleaningComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">Layer 1: Strip noise characters & extract hex (10 pts)</span>
+                        <span className="text-xs font-mono text-cyber-muted">Writing a "Cleaner" script to remove garbage characters (15 pts)</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer p-2 border border-cyber-border rounded hover:bg-cyber-cyan/5">
                         <input type="checkbox" checked={hexDecodingComplete} onChange={() => setHexDecodingComplete(!hexDecodingComplete)} className="hidden" />
                         <span className={`w-3 h-3 border ${hexDecodingComplete ? 'bg-cyber-cyan' : ''}`} />
-                        <span className="text-xs font-mono text-cyber-muted">Layer 2: Hex to ASCII conversion (10 pts)</span>
+                        <span className="text-xs font-mono text-cyber-muted">Successful code-based conversion from Hexadecimal to Text (20 pts)</span>
                     </label>
                 </div>
 
@@ -427,7 +427,7 @@ function HexaVaultPuzzle({
 
                 <div>
                     <label className="block text-cyber-muted text-[10px] font-mono mb-2 uppercase tracking-widest">
-                        Layer 3: Riddle Answer (Breach Key 2)
+                        Solving the final riddle to get the answer word (15 pts) (Breach Key 2)
                     </label>
                     <input
                         type="text"
@@ -630,7 +630,7 @@ export default function Round2Page() {
                     <div className="card-cyber min-h-[500px]">
                         <div className="flex items-center justify-between mb-8 border-b border-cyber-border pb-4">
                             <h2 className="text-2xl font-orbitron font-bold text-cyber-text flex items-center gap-3">
-                                <span className="text-cyber-cyan font-black">0{activeLevel}</span>
+                                <span className="text-cyber-cyan font-black mr-2">0{activeLevel}</span>
                                 {levels[activeLevel - 1].title}
                             </h2>
                             {levels[activeLevel - 1].complete && (

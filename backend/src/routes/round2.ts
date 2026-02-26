@@ -164,7 +164,14 @@ router.post('/phase/1', authenticateTeam, async (req: AuthRequest, res: Response
         let pointsEarned = 0;
 
         if (isComplete) {
-            pointsEarned = 50;
+            pointsEarned = 20; // 20 points for correctly identifying Row ID
+
+            const { vowelCheckComplete, lengthMathCheckComplete } = req.body;
+            if (vowelCheckComplete && lengthMathCheckComplete) {
+                pointsEarned += 10; // 10 points for correct script logic
+                pointsEarned += 20; // 20 points for correct debugging
+            }
+
             await supabase
                 .from('round_progress')
                 .update({
@@ -225,7 +232,12 @@ router.post('/phase/2', authenticateTeam, async (req: AuthRequest, res: Response
         let pointsEarned = 0;
 
         if (isComplete) {
-            pointsEarned = 50;
+            pointsEarned = 15; // 15 points for final riddle answer
+
+            const { hexCleaningComplete, hexDecodingComplete } = req.body;
+            if (hexCleaningComplete) pointsEarned += 15; // 15 points for script to remove garbage chars
+            if (hexDecodingComplete) pointsEarned += 20; // 20 points for Hex to Text
+
             await supabase
                 .from('round_progress')
                 .update({

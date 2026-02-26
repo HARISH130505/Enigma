@@ -46,13 +46,11 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 2px
-  );
+  background: repeating-linear-gradient(0deg,
+      rgba(0, 0, 0, 0.15),
+      rgba(0, 0, 0, 0.15) 1px,
+      transparent 1px,
+      transparent 2px);
   pointer-events: none;
   z-index: 1000;
   opacity: 0.3;
@@ -60,10 +58,23 @@ body {
 
 /* Screen flicker effect */
 @keyframes flicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.98; }
-  52% { opacity: 1; }
-  54% { opacity: 0.97; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.98;
+  }
+
+  52% {
+    opacity: 1;
+  }
+
+  54% {
+    opacity: 0.97;
+  }
 }
 
 .screen-flicker {
@@ -76,22 +87,27 @@ body {
     clip-path: inset(40% 0 61% 0);
     transform: translate(-2px, 2px);
   }
+
   20% {
     clip-path: inset(92% 0 1% 0);
     transform: translate(2px, -2px);
   }
+
   40% {
     clip-path: inset(43% 0 1% 0);
     transform: translate(-2px, 2px);
   }
+
   60% {
     clip-path: inset(25% 0 58% 0);
     transform: translate(2px, -2px);
   }
+
   80% {
     clip-path: inset(54% 0 7% 0);
     transform: translate(-2px, 2px);
   }
+
   100% {
     clip-path: inset(58% 0 43% 0);
     transform: translate(2px, -2px);
@@ -126,8 +142,16 @@ body {
 
 /* Typing effect cursor */
 @keyframes blink {
-  0%, 50% { border-color: var(--accent-cyan); }
-  51%, 100% { border-color: transparent; }
+
+  0%,
+  50% {
+    border-color: var(--accent-cyan);
+  }
+
+  51%,
+  100% {
+    border-color: transparent;
+  }
 }
 
 .typing-cursor::after {
@@ -164,12 +188,20 @@ body {
   border-radius: 50%;
 }
 
-.terminal-dot.red { background: #ff5f56; }
-.terminal-dot.yellow { background: #ffbd2e; }
-.terminal-dot.green { background: #27ca40; }
+.terminal-dot.red {
+  background: #ff5f56;
+}
+
+.terminal-dot.yellow {
+  background: #ffbd2e;
+}
+
+.terminal-dot.green {
+  background: #27ca40;
+}
 
 .terminal-body {
-  padding: 16px;
+  padding: 24px;
   min-height: 200px;
   max-height: 400px;
   overflow-y: auto;
@@ -290,7 +322,7 @@ body {
   background: linear-gradient(135deg, rgba(13, 17, 23, 0.9), rgba(22, 27, 34, 0.9));
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 24px;
+  padding: 32px;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
@@ -338,13 +370,20 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* Evidence node styling */
 .evidence-node {
-  padding: 16px;
+  padding: 20px;
   background: var(--bg-tertiary);
   border: 2px solid var(--border-color);
   border-radius: 8px;
@@ -386,8 +425,8 @@ body {
 .drop-zone {
   border: 2px dashed var(--border-color);
   border-radius: 8px;
-  padding: 16px;
-  min-height: 60px;
+  padding: 24px;
+  min-height: 80px;
   transition: all 0.3s ease;
 }
 
@@ -398,7 +437,7 @@ body {
 
 /* Grid patterns */
 .bg-grid {
-  background-image: 
+  background-image:
     linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
@@ -459,7 +498,7 @@ body {
   .countdown {
     font-size: 1.5rem;
   }
-  
+
   .terminal-body {
     padding: 12px;
     font-size: 12px;
@@ -477,18 +516,22 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Access granted/denied animations */
 @keyframes accessGranted {
-  0% { 
+  0% {
     transform: scale(0.8);
     opacity: 0;
   }
+
   50% {
     transform: scale(1.1);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -496,9 +539,21 @@ body {
 }
 
 @keyframes accessDenied {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-10px); }
-  40%, 80% { transform: translateX(10px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-10px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(10px);
+  }
 }
 
 .access-granted {

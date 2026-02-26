@@ -202,7 +202,7 @@ function MorseTransmissionPuzzle({
                     </div>
                 </div>
                 <div className="bg-[#0a0e14] rounded border border-cyber-border p-4 max-h-48 overflow-y-auto">
-                    <pre className="text-cyber-text font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
+                    <pre className="text-cyber-green font-mono text-xs md:text-sm whitespace-pre-wrap break-all leading-loose tracking-widest">
                         {morseCode}
                     </pre>
                 </div>
@@ -218,7 +218,7 @@ function MorseTransmissionPuzzle({
                         STEP 1:
                     </span>
                     <span className="text-cyber-muted font-mono text-xs uppercase tracking-wider">
-                        {riddleVerified ? '✓ Decoded Message Verified' : 'Enter the Decoded Message'}
+                        {riddleVerified ? ' ✓ Decoded Message Verified' : ' Enter the Decoded Message'}
                     </span>
                 </div>
 
@@ -263,10 +263,10 @@ function MorseTransmissionPuzzle({
             <div className={`p-4 rounded border ${riddleVerified ? 'bg-cyber-dark border-cyber-cyan/30' : 'bg-cyber-dark border-cyber-border opacity-40'}`}>
                 <div className="flex items-center gap-2 mb-3">
                     <span className={`text-sm font-mono font-bold px-2 py-0.5 rounded ${riddleVerified ? 'bg-cyber-cyan/20 text-cyber-cyan' : 'bg-cyber-border/20 text-cyber-muted'}`}>
-                        STEP 2
+                        STEP 2:
                     </span>
                     <span className="text-cyber-muted font-mono text-xs uppercase tracking-wider">
-                        {riddleVerified ? 'Enter the Riddle Answer' : '🔒 Decode the message first'}
+                        {riddleVerified ? ' Enter the Riddle Answer' : ' 🔒 Decode the message first'}
                     </span>
                 </div>
 
@@ -552,10 +552,11 @@ export default function Round3Page() {
 
                 {/* Active Phase Panel */}
                 <div className="lg:col-span-3">
-                    <div className="card-cyber">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-orbitron font-bold text-cyber-text">
-                                {phases[activePhase - 1].title.toUpperCase()}
+                    <div className="card-cyber min-h-[500px]">
+                        <div className="flex items-center justify-between mb-8 border-b border-cyber-border pb-4">
+                            <h2 className="text-2xl font-orbitron font-bold text-cyber-text flex items-center gap-4">
+                                <span className="text-cyber-cyan font-black">0{activePhase}</span>
+                                {phases[activePhase - 1].title}
                             </h2>
                             {phases[activePhase - 1].complete && (
                                 <span className="badge badge-complete">COMPLETED</span>
