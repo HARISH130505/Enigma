@@ -79,6 +79,30 @@ async function deductPoints(sessionId: string, pointsToDeduct: number) {
     return newPoints;
 }
 
+// Helper: check if all levels are done and mark round as complete
+async function checkRoundComplete(sessionId: string) {
+    const { data: progress } = await supabase
+        .from('round_progress')
+        .select('evidence_1_complete, evidence_2_complete, evidence_3_complete, evidence_4_complete, evidence_5_complete')
+        .eq('session_id', sessionId)
+        .eq('round_number', 1)
+        .single();
+
+    if (progress?.evidence_1_complete && progress?.evidence_2_complete && progress?.evidence_3_complete && progress?.evidence_4_complete && progress?.evidence_5_complete) {
+        await supabase
+            .from('round_progress')
+            .update({
+                escape_code_unlocked: true,
+                completed_at: new Date().toISOString()
+            } as any)
+            .eq('session_id', sessionId)
+            .eq('round_number', 1);
+
+        return true;
+    }
+    return false;
+}
+
 // ──────────────────── Level 1: Jigsaw Puzzle ────────────────────
 router.post('/evidence/1', authenticateTeam, async (req: AuthRequest, res: Response) => {
     try {
@@ -101,11 +125,13 @@ router.post('/evidence/1', authenticateTeam, async (req: AuthRequest, res: Respo
                 .eq('round_number', 1);
 
             const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+            const roundComplete = await checkRoundComplete(req.sessionId!);
 
             res.json({
                 success: true,
                 message: 'MAP FRAGMENT RECONSTRUCTED. Strike coordinates recovered. (+25 Points)',
                 accessGranted: true,
+                roundComplete,
                 pointsEarned: POINTS.CORRECT,
                 totalPoints: newPoints,
             });
@@ -148,11 +174,13 @@ router.post('/evidence/2', authenticateTeam, async (req: AuthRequest, res: Respo
                 .eq('round_number', 1);
 
             const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+            const roundComplete = await checkRoundComplete(req.sessionId!);
 
             res.json({
                 success: true,
                 message: 'BUNKER ROUTE CONFIRMED. Internal progression verified. (+25 Points)',
                 accessGranted: true,
+                roundComplete,
                 pointsEarned: POINTS.CORRECT,
                 totalPoints: newPoints,
             });
@@ -193,11 +221,13 @@ router.post('/evidence/3', authenticateTeam, async (req: AuthRequest, res: Respo
                 .eq('round_number', 1);
 
             const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+            const roundComplete = await checkRoundComplete(req.sessionId!);
 
             res.json({
                 success: true,
                 message: 'TRANSMISSION DECRYPTED. Contents of the leaked message confirmed. (+25 Points)',
                 accessGranted: true,
+                roundComplete,
                 pointsEarned: POINTS.CORRECT,
                 totalPoints: newPoints,
             });
@@ -240,11 +270,13 @@ router.post('/evidence/4', authenticateTeam, async (req: AuthRequest, res: Respo
                 .eq('round_number', 1);
 
             const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+            const roundComplete = await checkRoundComplete(req.sessionId!);
 
             res.json({
                 success: true,
                 message: 'BINARY FRAGMENT DECODED. Authentication code fragment recovered. (+25 Points)',
                 accessGranted: true,
+                roundComplete,
                 pointsEarned: POINTS.CORRECT,
                 totalPoints: newPoints,
             });
@@ -286,18 +318,18 @@ router.post('/evidence/5', authenticateTeam, async (req: AuthRequest, res: Respo
                 .from('round_progress')
                 .update({
                     evidence_5_complete: true,
-                    completed_at: new Date().toISOString(),
                 } as any)
                 .eq('session_id', req.sessionId)
                 .eq('round_number', 1);
 
             const newPoints = await awardPoints(req.sessionId!, POINTS.CORRECT);
+            const roundComplete = await checkRoundComplete(req.sessionId!);
 
             res.json({
                 success: true,
-                message: 'TRAITOR IDENTIFIED. Investigation complete. Round 1 cleared. (+25 Points)',
+                message: 'TRAITOR IDENTIFIED. Investigation complete. (+25 Points)',
                 accessGranted: true,
-                roundComplete: true,
+                roundComplete,
                 pointsEarned: POINTS.CORRECT,
                 totalPoints: newPoints,
             });

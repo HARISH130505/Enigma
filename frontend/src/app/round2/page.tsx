@@ -504,6 +504,8 @@ export default function Round2Page() {
                 fetchStatus();
                 if (levelNum < 2) {
                     setActiveLevel(levelNum + 1);
+                } else {
+                    setShowAccessMessage({ type: 'denied', message: 'Complete all levels in this round first!' });
                 }
             }, 2000);
         }

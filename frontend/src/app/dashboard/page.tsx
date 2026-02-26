@@ -84,11 +84,13 @@ export default function Dashboard() {
         if (!progress) return 'locked';
         const round = progress.rounds.find(r => r.round_number === roundNum);
         if (round?.completed_at) return 'complete';
-        if (progress.session.currentRound >= roundNum) return 'active';
+        if (progress.session.currentRound > roundNum) return 'complete'; // Concluded by timeout/progression
+        if (progress.session.currentRound === roundNum) return 'active';
+
         // Check if previous round is completed but this round is not yet unlocked
         if (roundNum > 1) {
             const prevRound = progress.rounds.find(r => r.round_number === roundNum - 1);
-            if (prevRound?.completed_at) return 'needs-unlock';
+            if (prevRound?.completed_at || progress.session.currentRound >= roundNum) return 'needs-unlock';
         }
         return 'locked';
     };
@@ -127,7 +129,7 @@ export default function Dashboard() {
     const rounds = [
         {
             number: 1,
-            name: 'ATTACK ON BLACKRIDGE',
+            name: 'AUTHENTICATION BREACH',
             status: getRoundStatus(1),
             evidenceComplete: progress?.rounds.find(r => r.round_number === 1) ? getEvidenceCount(progress.rounds.find(r => r.round_number === 1)!) : 0,
             evidenceTotal: 5

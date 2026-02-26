@@ -265,7 +265,7 @@ function JigsawPuzzle({
     disabled,
     onPointsChange,
 }: {
-    onComplete: () => void;
+    onComplete: (roundComplete?: boolean) => void;
     disabled: boolean;
     onPointsChange: () => void;
 }) {
@@ -278,11 +278,11 @@ function JigsawPuzzle({
         setSubmitting(true);
         setMessage(null);
         try {
-            const response = await api.submitEvidence1(answer) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
+            const response = await api.submitEvidence1(answer) as { success: boolean; message: string; roundComplete?: boolean; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
                 setMessage({ type: 'success', text: response.message });
                 onPointsChange();
-                setTimeout(onComplete, 1500);
+                setTimeout(() => onComplete(response.roundComplete), 1500);
             } else {
                 setMessage({ type: 'error', text: response.message });
                 onPointsChange();
@@ -371,7 +371,7 @@ function BunkerSequencePuzzle({
     disabled,
     onPointsChange,
 }: {
-    onComplete: () => void;
+    onComplete: (roundComplete?: boolean) => void;
     disabled: boolean;
     onPointsChange: () => void;
 }) {
@@ -433,11 +433,11 @@ function BunkerSequencePuzzle({
         setMessage(null);
 
         try {
-            const response = await api.submitEvidence2(dropZone) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
+            const response = await api.submitEvidence2(dropZone) as { success: boolean; message: string; roundComplete?: boolean; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
                 setMessage({ type: 'success', text: response.message });
                 onPointsChange();
-                setTimeout(onComplete, 1500);
+                setTimeout(() => onComplete(response.roundComplete), 1500);
             } else {
                 setMessage({ type: 'error', text: response.message });
                 onPointsChange();
@@ -549,7 +549,7 @@ function CaesarCipherPuzzle({
     disabled,
     onPointsChange,
 }: {
-    onComplete: () => void;
+    onComplete: (roundComplete?: boolean) => void;
     disabled: boolean;
     onPointsChange: () => void;
 }) {
@@ -565,11 +565,11 @@ function CaesarCipherPuzzle({
         setMessage(null);
 
         try {
-            const response = await api.submitEvidence3(answer) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
+            const response = await api.submitEvidence3(answer) as { success: boolean; message: string; roundComplete?: boolean; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
                 setMessage({ type: 'success', text: response.message });
                 onPointsChange();
-                setTimeout(onComplete, 1500);
+                setTimeout(() => onComplete(response.roundComplete), 1500);
             } else {
                 setMessage({ type: 'error', text: response.message });
                 onPointsChange();
@@ -648,7 +648,7 @@ function BinaryDecodePuzzle({
     disabled,
     onPointsChange,
 }: {
-    onComplete: () => void;
+    onComplete: (roundComplete?: boolean) => void;
     disabled: boolean;
     onPointsChange: () => void;
 }) {
@@ -664,11 +664,11 @@ function BinaryDecodePuzzle({
         setMessage(null);
 
         try {
-            const response = await api.submitEvidence4(answer) as { success: boolean; message: string; pointsEarned?: number; pointsDeducted?: number };
+            const response = await api.submitEvidence4(answer) as { success: boolean; message: string; roundComplete?: boolean; pointsEarned?: number; pointsDeducted?: number };
             if (response.success) {
                 setMessage({ type: 'success', text: response.message });
                 onPointsChange();
-                setTimeout(onComplete, 1500);
+                setTimeout(() => onComplete(response.roundComplete), 1500);
             } else {
                 setMessage({ type: 'error', text: response.message });
                 onPointsChange();
@@ -748,7 +748,7 @@ function TraitorIdentificationPuzzle({
     disabled,
     onPointsChange,
 }: {
-    onComplete: () => void;
+    onComplete: (roundComplete?: boolean) => void;
     disabled: boolean;
     onPointsChange: () => void;
 }) {
@@ -779,7 +779,7 @@ function TraitorIdentificationPuzzle({
             if (response.success) {
                 setMessage({ type: 'success', text: response.message });
                 onPointsChange();
-                setTimeout(onComplete, 2000);
+                setTimeout(() => onComplete(response.roundComplete), 2000);
             } else {
                 setMessage({ type: 'error', text: response.message });
                 onPointsChange();
@@ -990,7 +990,7 @@ export default function Round1Page() {
         fetchStatus().finally(() => setLoading(false));
     }, [fetchStatus]);
 
-    const handleLevelComplete = (levelNum: number) => {
+    const handleLevelComplete = (levelNum: number, roundComplete?: boolean) => {
         console.log(`Level ${levelNum} completed, refreshing status...`);
         setShowAccessMessage({ type: 'granted', message: `Level ${levelNum} Verified` });
 
@@ -999,14 +999,18 @@ export default function Round1Page() {
         setTimeout(() => {
             setShowAccessMessage(null);
             fetchStatus();
-            if (levelNum < 5) {
-                setActiveLevel(levelNum + 1);
-            } else {
-                // Level 5 = round complete, redirect to unlock page for Round 2
+
+            if (roundComplete) {
+                // All 5 levels are complete
                 setShowAccessMessage({ type: 'granted', message: 'Round 1 Complete! Enter key to unlock Round 2...' });
                 setTimeout(() => {
                     router.push('/unlock?next=2');
                 }, 2500);
+            } else if (levelNum < 5) {
+                setActiveLevel(levelNum + 1);
+            } else {
+                // Reached level 5 but round is not complete
+                setShowAccessMessage({ type: 'denied', message: 'Complete all levels in this round first!' });
             }
         }, 2000);
     };
@@ -1054,7 +1058,7 @@ export default function Round1Page() {
                         ← BACK TO DASHBOARD
                     </button>
                     <h1 className="text-3xl font-orbitron font-bold text-cyber-cyan">
-                        ROUND 1: ATTACK ON BLACKRIDGE AIRFIELD
+                        ROUND 1: AUTHENTICATION BREACH
                     </h1>
                     <p className="text-cyber-muted text-sm font-mono mt-1">Year: 1943 · Eastern Front · Classified</p>
                 </div>
@@ -1139,7 +1143,7 @@ export default function Round1Page() {
                         <div className="flex-1">
                             {activeLevel === 1 && (
                                 <JigsawPuzzle
-                                    onComplete={() => handleLevelComplete(1)}
+                                    onComplete={(isComplete) => handleLevelComplete(1, isComplete)}
                                     disabled={status?.evidence1 || false}
                                     onPointsChange={fetchStatus}
                                 />
@@ -1147,7 +1151,7 @@ export default function Round1Page() {
 
                             {activeLevel === 2 && (
                                 <BunkerSequencePuzzle
-                                    onComplete={() => handleLevelComplete(2)}
+                                    onComplete={(isComplete) => handleLevelComplete(2, isComplete)}
                                     disabled={status?.evidence2 || false}
                                     onPointsChange={fetchStatus}
                                 />
@@ -1155,7 +1159,7 @@ export default function Round1Page() {
 
                             {activeLevel === 3 && (
                                 <CaesarCipherPuzzle
-                                    onComplete={() => handleLevelComplete(3)}
+                                    onComplete={(isComplete) => handleLevelComplete(3, isComplete)}
                                     disabled={status?.evidence3 || false}
                                     onPointsChange={fetchStatus}
                                 />
@@ -1163,7 +1167,7 @@ export default function Round1Page() {
 
                             {activeLevel === 4 && (
                                 <BinaryDecodePuzzle
-                                    onComplete={() => handleLevelComplete(4)}
+                                    onComplete={(isComplete) => handleLevelComplete(4, isComplete)}
                                     disabled={status?.evidence4 || false}
                                     onPointsChange={fetchStatus}
                                 />
@@ -1171,7 +1175,7 @@ export default function Round1Page() {
 
                             {activeLevel === 5 && (
                                 <TraitorIdentificationPuzzle
-                                    onComplete={() => handleLevelComplete(5)}
+                                    onComplete={(isComplete) => handleLevelComplete(5, isComplete)}
                                     disabled={status?.evidence5 || false}
                                     onPointsChange={fetchStatus}
                                 />

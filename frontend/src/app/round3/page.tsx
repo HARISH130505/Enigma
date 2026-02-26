@@ -365,6 +365,8 @@ export default function Round3Page() {
                 fetchStatus();
                 if (phaseNum < 3) {
                     setActivePhase(phaseNum + 1);
+                } else {
+                    setShowAccessMessage({ type: 'denied', message: 'Complete all transmissions first!' });
                 }
             }, 2000);
         }
