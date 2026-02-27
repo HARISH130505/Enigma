@@ -152,6 +152,7 @@ export default function Dashboard() {
 
     const totalPoints = progress?.rounds.reduce((sum, r) => sum + (r.points || 0), 0) || 0;
     const isGameCompleted = progress?.session.status === 'completed' || (progress?.session.globalExpiresAt && new Date() >= new Date(progress.session.globalExpiresAt));
+    const allRoundsCompleted = progress?.rounds?.length === 3 && progress.rounds.every(r => r.completed_at);
 
     return (
         <div className="min-h-screen p-4 md:p-8">
@@ -209,14 +210,16 @@ export default function Dashboard() {
 
             {/* Game Complete Celebration */}
             {isGameCompleted && (
-                <div className="mb-8 p-8 bg-[#0a0e14] border-2 border-[#00ff88] rounded-xl text-center shadow-[0_0_40px_rgba(0,255,136,0.2)] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#00ff88]/5 via-transparent to-[#00ffff]/5" />
+                <div className={`mb-8 p-8 bg-[#0a0e14] border-2 ${allRoundsCompleted ? 'border-[#00ff88] shadow-[0_0_40px_rgba(0,255,136,0.2)]' : 'border-[#ff3333] shadow-[0_0_40px_rgba(255,51,51,0.2)]'} rounded-xl text-center relative overflow-hidden`}>
+                    <div className={`absolute inset-0 bg-gradient-to-r ${allRoundsCompleted ? 'from-[#00ff88]/5 via-transparent to-[#00ffff]/5' : 'from-[#ff3333]/5 via-transparent to-[#ff3333]/5'}`} />
                     <div className="relative z-10">
-                        <div className="text-5xl mb-4">🏆</div>
-                        <h2 className="text-3xl font-orbitron font-black text-[#00ff88] tracking-widest uppercase mb-3 drop-shadow-[0_0_20px_rgba(0,255,136,0.5)]">
-                            YOU CRACKED THE ENIGMA MACHINE!
+                        <div className="text-5xl mb-4">{allRoundsCompleted ? '🏆' : '⏱️'}</div>
+                        <h2 className={`text-3xl font-orbitron font-black ${allRoundsCompleted ? 'text-[#00ff88] drop-shadow-[0_0_20px_rgba(0,255,136,0.5)]' : 'text-[#ff3333] drop-shadow-[0_0_20px_rgba(255,51,51,0.5)]'} tracking-widest uppercase mb-3`}>
+                            {allRoundsCompleted ? 'YOU CRACKED THE ENIGMA MACHINE!' : "TIME'S UP"}
                         </h2>
-                        <p className="text-[#8b9db8] font-mono text-sm mb-6">All rounds completed. Mission accomplished, Investigator.</p>
+                        <p className="text-[#8b9db8] font-mono text-sm mb-6">
+                            {allRoundsCompleted ? 'All rounds completed. Mission accomplished, Investigator.' : 'The mission timer has expired. Good effort, Investigator.'}
+                        </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
                             {rounds.map(round => {
