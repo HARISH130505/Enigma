@@ -151,7 +151,7 @@ export default function Dashboard() {
     ];
 
     const totalPoints = progress?.rounds.reduce((sum, r) => sum + (r.points || 0), 0) || 0;
-    const isGameCompleted = progress?.session.status === 'completed' || (progress?.session.globalExpiresAt && new Date() >= new Date(progress.session.globalExpiresAt));
+    const isGameCompleted = progress?.session.status === 'completed' || (progress?.session.currentRound !== 3 && progress?.session.globalExpiresAt && new Date() >= new Date(progress.session.globalExpiresAt));
     const allRoundsCompleted = progress?.rounds?.length === 3 && progress.rounds.every(r => r.completed_at);
 
     return (
@@ -187,7 +187,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {progress?.session.globalExpiresAt && (
+                    {progress?.session.globalExpiresAt && progress?.session.currentRound < 3 && (
                         <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
                             <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
                                 Time Remaining

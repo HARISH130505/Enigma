@@ -325,16 +325,12 @@ export default function Round3Page() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<RoundStatus | null>(null);
-    const [expiresAt, setExpiresAt] = useState<string | null>(null);
     const [activePhase, setActivePhase] = useState<number>(1);
     const [showAccessMessage, setShowAccessMessage] = useState<{ type: 'granted' | 'denied'; message: string } | null>(null);
 
     const fetchStatus = useCallback(async () => {
         try {
-            const [statusData, timerData] = await Promise.all([
-                api.getRound3Status() as Promise<RoundStatus>,
-                api.getTimer() as Promise<{ expiresAt: string }>
-            ]);
+            const statusData = (await api.getRound3Status()) as RoundStatus;
 
             if (statusData.locked) {
                 router.push('/dashboard');
@@ -342,7 +338,6 @@ export default function Round3Page() {
             }
 
             setStatus(statusData);
-            setExpiresAt(timerData.expiresAt);
         } catch {
             router.push('/dashboard');
         }
@@ -372,9 +367,7 @@ export default function Round3Page() {
         }
     };
 
-    const handleTimerExpire = useCallback(() => {
-        router.push('/dashboard');
-    }, [router]);
+
 
     if (loading) {
         return (
@@ -438,16 +431,7 @@ export default function Round3Page() {
                         </div>
                     </div>
 
-                    {expiresAt && (
-                        <div className="flex flex-col justify-center items-center btn-neon h-full min-w-[120px] px-6 py-3 font-orbitron text-sm transition-all">
-                            <div className="text-[10px] text-cyber-muted font-mono uppercase leading-none mb-2">
-                                Time Remaining
-                            </div>
-                            <div className="text-2xl font-orbitron font-bold text-cyber-cyan leading-none">
-                                <Countdown expiresAt={expiresAt} onExpire={handleTimerExpire} />
-                            </div>
-                        </div>
-                    )}
+
 
                     <button
                         onClick={() => router.push('/dashboard')}
